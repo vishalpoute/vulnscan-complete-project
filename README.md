@@ -336,7 +336,7 @@ This project is licensed under the MIT License - see LICENSE file for details.
 
 For issues, suggestions, or feedback:
 - Open an issue on GitHub
-- Contact: vishalpoute@gmail.com
+- Contact: vishupoute154@gmail.com
 - Submit feedback through the app
 
 ## 🔄 Git Workflow
