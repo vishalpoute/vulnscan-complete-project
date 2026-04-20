@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongo:
+    image: mongo:7.0
+    container_name: vulnscan-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD:-vulnscan123}
+      MONGO_INITDB_DATABASE: vulnscan
+    volumes:
+      - mongo_data:/data/db
+      - mongo_config:/data/configdb
+    networks:
+      - vulnscan-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend
+  api:
+    image: vulnscan-api:latest
+    container_name: vulnscan-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DEBUG: ${DEBUG:-False}
+      HOST: 0.0.0.0
+      PORT: 8000
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      MONGODB_URI: mongodb://root:${MONGODB_ROOT_PASSWORD:-vulnscan123}@mongo:27017/vulnscan?authSource=admin
+      MONGODB_DB_NAME: vulnscan
+      MAX_SCAN_TIMEOUT: 300
+      TEMP_SCAN_DIR: /tmp
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      - /tmp:/tmp
+    networks:
+      - vulnscan-network
+    restart: unless-stopped
+
+  # MobSF Mobile Security Framework
+  mobsf:
+    image: opensecurity/mobile-security-framework-mobsf:latest
+    container_name: vulnscan-mobsf
+    ports:
+      - "8001:8000"
+    environment:
+      MobSF_USER: admin
+      MobSF_PASSWORD: ${MOBSF_PASSWORD:-admin123}
+    volumes:
+      - mobsf_uploads:/home/mobsf/uploads
+      - mobsf_downloads:/home/mobsf/downloads
+    networks:
+      - vulnscan-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mongo_data:
+  mongo_config:
+  mobsf_uploads:
+  mobsf_downloads:
+
+networks:
+  vulnscan-network:
+    driver: bridge

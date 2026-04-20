@@ -1,0 +1,59 @@
+# Credentials & Secrets
+firebase_adminsdk.json
+.env
+.env.local
+.env.*.local
+
+# API Keys
+**/api_key.txt
+**/credentials.json
+
+# Build directories
+build/
+dist/
+.dart_tool/
+.flutter-plugins
+.packages
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.vs/
+*.iml
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+logs/
+
+# Cache
+.cache/
+*.cache
+
+# Temporary files
+*.tmp
+*.temp
