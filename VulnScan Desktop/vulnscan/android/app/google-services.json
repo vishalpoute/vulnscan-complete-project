@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "917374329470",
+    "project_id": "vulnscan-finalyear",
+    "storage_bucket": "vulnscan-finalyear.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:917374329470:android:70f76407ff121c287cee2f",
+        "android_client_info": {
+          "package_name": "com.example.vulnscan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBb2TRDXibDj8pvFV6iIJqkJrMUWev-ZRY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,59 +1,84 @@
-# Credentials & Secrets
-firebase_adminsdk.json
+# ============================================================
+# VulnScan Complete Project — .gitignore
+# ============================================================
+
+# ── SECRETS & CREDENTIALS (NEVER COMMIT THESE) ─────────────
 .env
 .env.local
 .env.*.local
-
-# API Keys
-**/api_key.txt
+firebase_adminsdk.json
+**/firebase_adminsdk.json
 **/credentials.json
+**/service_account*.json
+**/api_key.txt
+*.pem
+*.key
+*.p12
+*.pfx
 
-# Build directories
-build/
-dist/
-.dart_tool/
-.flutter-plugins
-.packages
-
-# Python
+# ── PYTHON ──────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.egg
+*.egg-info/
+dist/
+build/
 .Python
+pip-wheel-metadata/
+.installed.cfg
 env/
 venv/
 ENV/
 .venv
+.env/
 
-# IDEs
+# ── FLUTTER / DART ──────────────────────────────────────────
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/.pub-cache/
+**/.pub/
+**/pubspec.lock
+# Keep pubspec.lock for reproducible builds - uncomment to ignore:
+# pubspec.lock
+
+# ── NODE / JAVASCRIPT ───────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── IDEs & EDITORS ──────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.DS_Store
-.vs/
 *.iml
+.vs/
 
-# Node
-node_modules/
-npm-debug.log
-yarn-error.log
-
-# OS
+# ── OS GENERATED ────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 desktop.ini
+ehthumbs.db
 
-# Logs
+# ── LOGS & TEMP ─────────────────────────────────────────────
 *.log
 logs/
-
-# Cache
+*.tmp
+*.temp
 .cache/
 *.cache
 
-# Temporary files
-*.tmp
-*.temp
+# ── DOCKER ──────────────────────────────────────────────────
+.docker/
+docker-compose.override.yml
+
+# ── MISC ────────────────────────────────────────────────────
+*.bak
+*.orig

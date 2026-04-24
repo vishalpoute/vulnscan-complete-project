@@ -19,10 +19,10 @@ try:
             "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
         })
         firebase_admin.initialize_app(cred)
-        print("✓ Firebase Admin SDK initialized successfully")
+        print("[OK] Firebase Admin SDK initialized successfully")
 except Exception as e:
-    print(f"⚠ Firebase initialization warning: {e}")
-    print("⚠ Authentication endpoints will not work until Firebase is properly configured")
+    print(f"[WARN] Firebase initialization warning: {e}")
+    print("[WARN] Authentication endpoints will not work until Firebase is properly configured")
 
 
 security = HTTPBearer()
