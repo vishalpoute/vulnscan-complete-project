@@ -1,38 +1,36 @@
 """AI-powered vulnerability analysis using Claude."""
 
-import anthropic
+import asyncio
 import json
 import re
 from typing import Optional
-from models.vulnerability import Vulnerability, SeverityLevel
+
 from core.config import settings
+from models.vulnerability import SeverityLevel, Vulnerability
 
 
-async def analyze_vulnerability(vuln: Vulnerability) -> None:
-    """
-    Analyze a vulnerability using Claude AI.
-    Enriches vuln with ai_explanation and ai_fix_suggestion.
-    Only processes Critical and High severity vulnerabilities.
-    
-    Args:
-        vuln: Vulnerability object to analyze (modified in-place)
-        
-    Returns:
-        None (modifies vuln object directly)
-    """
-    # Skip if not Critical/High or already has AI content
-    if vuln.severity not in [SeverityLevel.CRITICAL, SeverityLevel.HIGH]:
-        return
-    
-    if not settings.CLAUDE_API_KEY:
-        print("⚠️ CLAUDE_API_KEY not configured, skipping AI analysis")
-        return
-    
+def _parse_ai_response(response_text: str, vuln: Vulnerability) -> None:
+    """Parse Claude JSON response into a Vulnerability object."""
     try:
-        client = anthropic.Anthropic(api_key=settings.CLAUDE_API_KEY)
-        
-        # Build user prompt with vulnerability details
-        user_prompt = f"""
+        json_match = re.search(r"\{.*\}", response_text, re.DOTALL)
+        if json_match:
+            response_json = json.loads(json_match.group())
+            vuln.ai_explanation = response_json.get("explanation")
+            vuln.ai_fix_suggestion = response_json.get("fix_suggestion")
+        else:
+            vuln.ai_explanation = response_text[:500]
+        vuln.has_ai_content = True
+    except json.JSONDecodeError:
+        vuln.ai_explanation = response_text[:500]
+        vuln.has_ai_content = True
+
+
+def _call_claude(vuln: Vulnerability) -> str:
+    """Call Claude synchronously; executed in a worker thread."""
+    import anthropic
+
+    client = anthropic.Anthropic(api_key=settings.CLAUDE_API_KEY)
+    user_prompt = f"""
 Analyze this security vulnerability:
 
 **Title:** {vuln.title}
@@ -48,11 +46,11 @@ Analyze this security vulnerability:
 
 **Description:** {vuln.description}
 """
-        
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=500,
-            system="""You are a senior security engineer. Given a vulnerability found in code, provide:
+
+    message = client.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=500,
+        system="""You are a senior security engineer. Given a vulnerability found in code, provide:
 1. A clear explanation in 2-3 sentences (what it is, why it is dangerous)
 2. A concrete code fix with before/after example
 Keep response under 200 words. Be specific to the code shown.
@@ -60,62 +58,41 @@ Keep response under 200 words. Be specific to the code shown.
 Format your response as JSON with two fields:
 - "explanation": string (2-3 sentences explaining the vulnerability)
 - "fix_suggestion": string (before/after code example)""",
-            messages=[
-                {"role": "user", "content": user_prompt}
-            ]
-        )
-        
-        # Parse response
-        response_text = message.content[0].text
-        
-        # Try to extract JSON from response
-        try:
-            # Look for JSON in the response
-            json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-            if json_match:
-                response_json = json.loads(json_match.group())
-                vuln.ai_explanation = response_json.get("explanation")
-                vuln.ai_fix_suggestion = response_json.get("fix_suggestion")
-                vuln.has_ai_content = True
-                print(f"✨ AI analysis complete for {vuln.type}")
-            else:
-                # If no JSON found, use raw response
-                vuln.ai_explanation = response_text[:500]
-                vuln.has_ai_content = True
-        except json.JSONDecodeError:
-            # If JSON parsing fails, use raw response
-            vuln.ai_explanation = response_text[:500]
-            vuln.has_ai_content = True
-            
-    except anthropic.APIError as e:
-        print(f"❌ Claude API error for {vuln.type}: {e}")
-        # Leave AI fields as None, don't crash
-        vuln.ai_explanation = None
-        vuln.ai_fix_suggestion = None
-        vuln.has_ai_content = False
-    except Exception as e:
-        print(f"❌ Unexpected error in AI analysis for {vuln.type}: {e}")
+        messages=[{"role": "user", "content": user_prompt}],
+    )
+    return message.content[0].text
+
+
+async def analyze_vulnerability(vuln: Vulnerability) -> None:
+    """Enrich a critical/high vulnerability with Claude analysis when configured."""
+    if vuln.severity not in [SeverityLevel.CRITICAL, SeverityLevel.HIGH, "critical", "high"]:
+        return
+
+    if not settings.CLAUDE_API_KEY:
+        print("⚠️ CLAUDE_API_KEY not configured, skipping AI analysis")
+        return
+
+    try:
+        response_text = await asyncio.to_thread(_call_claude, vuln)
+        _parse_ai_response(response_text, vuln)
+        print(f"✨ AI analysis complete for {vuln.type}")
+    except ImportError:
+        print("⚠️ anthropic package is not installed, skipping AI analysis")
+    except Exception as exc:
+        print(f"❌ AI analysis error for {vuln.type}: {exc}")
         vuln.ai_explanation = None
         vuln.ai_fix_suggestion = None
         vuln.has_ai_content = False
 
 
 async def analyze_vulnerabilities(vulnerabilities: list, scan_type: str) -> str:
-    """
-    Use Claude/GPT to provide advanced analysis and remediation guidance
-    for found vulnerabilities.
-    
-    Deprecated: Use analyze_vulnerability() instead for individual vulnerabilities.
-    """
-    # TODO: Implement Claude/OpenAI integration
+    """Deprecated compatibility wrapper for older callers."""
+    for vulnerability in vulnerabilities:
+        if isinstance(vulnerability, Vulnerability):
+            await analyze_vulnerability(vulnerability)
     return ""
 
 
 async def get_remediation_steps(vulnerability_type: str) -> Optional[str]:
-    """
-    Get AI-generated remediation steps for a vulnerability type.
-    
-    Deprecated: Use analyze_vulnerability() instead.
-    """
-    # TODO: Implement AI remediation generation
+    """Deprecated compatibility wrapper for older callers."""
     return None

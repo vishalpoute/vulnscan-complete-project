@@ -100,7 +100,10 @@ class _NewScanScreenState extends ConsumerState<NewScanScreen> {
         ),
         content: Text(
           'You have reached your monthly scan limit. Upgrade your plan to continue scanning.',
-          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
         ),
         actions: [
           TextButton(
@@ -258,8 +261,7 @@ class _NewScanScreenState extends ConsumerState<NewScanScreen> {
                             icon: Icons.language_outlined,
                             label: 'Web App',
                             description: 'Semgrep · npm audit',
-                            onTap: (v) =>
-                                setState(() => _selectedScanType = v),
+                            onTap: (v) => setState(() => _selectedScanType = v),
                           ),
                           const SizedBox(width: 10),
                           _ScanTypeButton(
@@ -268,8 +270,7 @@ class _NewScanScreenState extends ConsumerState<NewScanScreen> {
                             icon: Icons.android_outlined,
                             label: 'Android',
                             description: 'MobSF · Bandit',
-                            onTap: (v) =>
-                                setState(() => _selectedScanType = v),
+                            onTap: (v) => setState(() => _selectedScanType = v),
                           ),
                           const SizedBox(width: 10),
                           _ScanTypeButton(
@@ -278,8 +279,7 @@ class _NewScanScreenState extends ConsumerState<NewScanScreen> {
                             icon: Icons.phone_iphone_outlined,
                             label: 'iOS',
                             description: 'MobSF · Semgrep',
-                            onTap: (v) =>
-                                setState(() => _selectedScanType = v),
+                            onTap: (v) => setState(() => _selectedScanType = v),
                           ),
                         ],
                       ),
@@ -334,10 +334,14 @@ class _NewScanScreenState extends ConsumerState<NewScanScreen> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppColors.error.withOpacity(0.12),
+                                    color: AppColors.error.withValues(
+                                      alpha: 0.12,
+                                    ),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
-                                      color: AppColors.error.withOpacity(0.4),
+                                      color: AppColors.error.withValues(
+                                        alpha: 0.4,
+                                      ),
                                     ),
                                   ),
                                   child: Text(
@@ -496,11 +500,13 @@ class _ScanTypeButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppColors.accentGreen.withOpacity(0.1)
+                ? AppColors.accentGreen.withValues(alpha: 0.1)
                 : AppColors.bgSecondary,
             borderRadius: BorderRadius.circular(6),
             border: Border.all(
-              color: isSelected ? AppColors.accentGreen : AppColors.borderDefault,
+              color: isSelected
+                  ? AppColors.accentGreen
+                  : AppColors.borderDefault,
               width: isSelected ? 2 : 1,
             ),
           ),
@@ -509,7 +515,9 @@ class _ScanTypeButton extends StatelessWidget {
               Icon(
                 icon,
                 size: 22,
-                color: isSelected ? AppColors.accentGreen : AppColors.textSecondary,
+                color: isSelected
+                    ? AppColors.accentGreen
+                    : AppColors.textSecondary,
               ),
               const SizedBox(height: 6),
               Text(
@@ -517,7 +525,9 @@ class _ScanTypeButton extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isSelected ? AppColors.accentGreen : AppColors.textPrimary,
+                  color: isSelected
+                      ? AppColors.accentGreen
+                      : AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 3),

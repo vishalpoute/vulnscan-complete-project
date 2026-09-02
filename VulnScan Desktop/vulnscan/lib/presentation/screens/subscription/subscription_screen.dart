@@ -8,8 +8,7 @@ class SubscriptionScreen extends ConsumerStatefulWidget {
   const SubscriptionScreen({super.key});
 
   @override
-  ConsumerState<SubscriptionScreen> createState() =>
-      _SubscriptionScreenState();
+  ConsumerState<SubscriptionScreen> createState() => _SubscriptionScreenState();
 }
 
 class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
@@ -58,8 +57,11 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            const Icon(Icons.workspace_premium_outlined,
-                color: AppColors.accentGreen, size: 18),
+            const Icon(
+              Icons.workspace_premium_outlined,
+              color: AppColors.accentGreen,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Text(
               'Plans & Pricing',
@@ -132,7 +134,8 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                       name: 'Pro',
                       price: '₹829',
                       period: 'per month',
-                      description: 'For professional developers and small teams.',
+                      description:
+                          'For professional developers and small teams.',
                       features: const [
                         '100 scans / month',
                         'Web & Mobile scanning',
@@ -156,7 +159,8 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                       name: 'Enterprise',
                       price: '₹8,299',
                       period: 'per month',
-                      description: 'For teams that need unlimited security coverage.',
+                      description:
+                          'For teams that need unlimited security coverage.',
                       features: const [
                         'Unlimited scans',
                         'All Pro features',
@@ -307,10 +311,10 @@ class _PlanCard extends StatelessWidget {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.accentBlue.withOpacity(0.15),
+                          color: AppColors.accentBlue.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: AppColors.accentBlue.withOpacity(0.5),
+                            color: AppColors.accentBlue.withValues(alpha: 0.5),
                           ),
                         ),
                         child: Text(

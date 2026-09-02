@@ -22,7 +22,11 @@ class SettingsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Row(
           children: [
-            const Icon(Icons.settings_outlined, color: AppColors.accentGreen, size: 18),
+            const Icon(
+              Icons.settings_outlined,
+              color: AppColors.accentGreen,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Text(
               'Settings',
@@ -125,7 +129,9 @@ class SettingsScreen extends ConsumerWidget {
                         label: const Text('Send Reset Link'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textPrimary,
-                          side: const BorderSide(color: AppColors.borderDefault),
+                          side: const BorderSide(
+                            color: AppColors.borderDefault,
+                          ),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 14,
                             vertical: 8,
@@ -146,13 +152,13 @@ class SettingsScreen extends ConsumerWidget {
                 _SettingsCard(
                   child: Column(
                     children: [
-                      _InfoRow(
-                        label: 'Version',
-                        value: 'v1.0.0',
-                        mono: true,
-                      ),
+                      _InfoRow(label: 'Version', value: 'v1.0.0', mono: true),
                       const Divider(height: 20, color: AppColors.borderDefault),
-                      _InfoRow(label: 'Backend', value: 'FastAPI + Python', mono: false),
+                      _InfoRow(
+                        label: 'Backend',
+                        value: 'FastAPI + Python',
+                        mono: false,
+                      ),
                       const Divider(height: 20, color: AppColors.borderDefault),
                       InkWell(
                         onTap: () =>
@@ -196,9 +202,11 @@ class SettingsScreen extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.05),
+                    color: AppColors.error.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.error.withOpacity(0.4)),
+                    border: Border.all(
+                      color: AppColors.error.withValues(alpha: 0.4),
+                    ),
                   ),
                   child: Row(
                     children: [
@@ -354,16 +362,20 @@ class _ProfileCard extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.accentGreen.withOpacity(0.15),
+                  color: AppColors.accentGreen.withValues(alpha: 0.15),
                   border: Border.all(
-                    color: AppColors.accentGreen.withOpacity(0.4),
+                    color: AppColors.accentGreen.withValues(alpha: 0.4),
                   ),
                 ),
                 child: Center(
                   child: Text(
                     (() {
-                      final name = (user.displayName?.isNotEmpty == true ? user.displayName! : user.email);
-                      return name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
+                      final name = (user.displayName?.isNotEmpty == true
+                          ? user.displayName!
+                          : user.email);
+                      return name.isNotEmpty
+                          ? name.substring(0, 1).toUpperCase()
+                          : '?';
                     })(),
                     style: GoogleFonts.jetBrainsMono(
                       color: AppColors.accentGreen,
@@ -399,9 +411,8 @@ class _ProfileCard extends StatelessWidget {
             ],
           );
         },
-        loading: () => const CircularProgressIndicator(
-          color: AppColors.accentGreen,
-        ),
+        loading: () =>
+            const CircularProgressIndicator(color: AppColors.accentGreen),
         error: (e, s) =>
             Text('Error: $e', style: const TextStyle(color: AppColors.error)),
       ),
@@ -419,7 +430,9 @@ class _SubscriptionCard extends StatelessWidget {
     return subscriptionState.when(
       data: (sub) {
         if (sub == null) return const SizedBox();
-        final progress = sub.scansLimit > 0 ? sub.scansUsed / sub.scansLimit : 0.0;
+        final progress = sub.scansLimit > 0
+            ? sub.scansUsed / sub.scansLimit
+            : 0.0;
         final tierColor = _tierColor(sub.tier);
 
         return _SettingsCard(
@@ -442,9 +455,11 @@ class _SubscriptionCard extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: tierColor.withOpacity(0.15),
+                      color: tierColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: tierColor.withOpacity(0.5)),
+                      border: Border.all(
+                        color: tierColor.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: Text(
                       sub.tier.toUpperCase(),
@@ -516,7 +531,11 @@ class _InfoRow extends StatelessWidget {
   final String value;
   final bool mono;
 
-  const _InfoRow({required this.label, required this.value, required this.mono});
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    required this.mono,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -525,7 +544,10 @@ class _InfoRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+          style: GoogleFonts.inter(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+          ),
         ),
         Text(
           value,

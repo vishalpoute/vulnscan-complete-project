@@ -46,9 +46,9 @@ class _ScanReportScreenState extends ConsumerState<ScanReportScreen> {
         userTier: userTier,
       );
       if (filePath != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Report saved to $filePath')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Report saved to $filePath')));
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -60,7 +60,10 @@ class _ScanReportScreenState extends ConsumerState<ScanReportScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: AppColors.error,
+          ),
         );
       }
     } finally {
@@ -109,7 +112,11 @@ class _ScanReportScreenState extends ConsumerState<ScanReportScreen> {
       appBar: AppBar(
         title: Row(
           children: [
-            const Icon(Icons.article_outlined, color: AppColors.accentGreen, size: 18),
+            const Icon(
+              Icons.article_outlined,
+              color: AppColors.accentGreen,
+              size: 18,
+            ),
             const SizedBox(width: 8),
             Text(
               'Scan Report',
@@ -157,7 +164,11 @@ class _ScanReportScreenState extends ConsumerState<ScanReportScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: AppColors.error,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Failed to load report',
@@ -206,7 +217,8 @@ class _ScanReportScreenState extends ConsumerState<ScanReportScreen> {
                           subscription?.tier ?? 'free',
                           report,
                         ),
-                        orElse: () => _buildVulnList(filteredVulns, 'free', report),
+                        orElse: () =>
+                            _buildVulnList(filteredVulns, 'free', report),
                       ),
               ),
             ],
@@ -259,7 +271,9 @@ class _ScanReportScreenState extends ConsumerState<ScanReportScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      DateFormat('MMM dd, yyyy – hh:mm a').format(report.scanDate),
+                      DateFormat(
+                        'MMM dd, yyyy – hh:mm a',
+                      ).format(report.scanDate),
                       style: GoogleFonts.inter(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -287,9 +301,9 @@ class _ScanReportScreenState extends ConsumerState<ScanReportScreen> {
                   onPressed: _isExporting
                       ? null
                       : () => _handleExportPdf(
-                            report,
-                            subscription?.tier ?? 'free',
-                          ),
+                          report,
+                          subscription?.tier ?? 'free',
+                        ),
                 ),
                 orElse: () => const SizedBox(),
               ),
@@ -362,17 +376,33 @@ class _ScanReportScreenState extends ConsumerState<ScanReportScreen> {
         children: [
           _filterTab('All', 'all', report.totalVulnerabilities),
           const SizedBox(width: 8),
-          _filterTab('Critical', 'critical', report.criticalCount,
-              color: AppColors.severityCritical),
+          _filterTab(
+            'Critical',
+            'critical',
+            report.criticalCount,
+            color: AppColors.severityCritical,
+          ),
           const SizedBox(width: 8),
-          _filterTab('High', 'high', report.highCount,
-              color: AppColors.severityHigh),
+          _filterTab(
+            'High',
+            'high',
+            report.highCount,
+            color: AppColors.severityHigh,
+          ),
           const SizedBox(width: 8),
-          _filterTab('Medium', 'medium', report.mediumCount,
-              color: AppColors.severityMedium),
+          _filterTab(
+            'Medium',
+            'medium',
+            report.mediumCount,
+            color: AppColors.severityMedium,
+          ),
           const SizedBox(width: 8),
-          _filterTab('Low', 'low', report.lowCount,
-              color: AppColors.severityLow),
+          _filterTab(
+            'Low',
+            'low',
+            report.lowCount,
+            color: AppColors.severityLow,
+          ),
         ],
       ),
     );
@@ -387,7 +417,7 @@ class _ScanReportScreenState extends ConsumerState<ScanReportScreen> {
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
-          color: isSelected ? c.withOpacity(0.15) : AppColors.bgPrimary,
+          color: isSelected ? c.withValues(alpha: 0.15) : AppColors.bgPrimary,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? c : AppColors.borderDefault,
@@ -428,7 +458,10 @@ class _ScanReportScreenState extends ConsumerState<ScanReportScreen> {
           const SizedBox(height: 8),
           Text(
             'This repository appears to be secure.',
-            style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -474,9 +507,9 @@ class _SummaryCount extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           children: [
@@ -490,7 +523,10 @@ class _SummaryCount extends StatelessWidget {
             ),
             Text(
               label,
-              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary),
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                color: AppColors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -546,7 +582,10 @@ class _VulnCardState extends State<_VulnCard> {
               decoration: BoxDecoration(
                 color: _severityColor,
                 gradient: LinearGradient(
-                  colors: [_severityColor, _severityColor.withOpacity(0.3)],
+                  colors: [
+                    _severityColor,
+                    _severityColor.withValues(alpha: 0.3),
+                  ],
                 ),
               ),
             ),
@@ -615,12 +654,17 @@ class _VulnCardState extends State<_VulnCard> {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppColors.severityCritical.withOpacity(0.1),
+                      color: AppColors.severityCritical.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(
-                        color: AppColors.severityCritical.withOpacity(0.3),
+                        color: AppColors.severityCritical.withValues(
+                          alpha: 0.3,
+                        ),
                       ),
                     ),
                     child: Text(
@@ -709,9 +753,9 @@ class _SeverityBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(
         severity.toUpperCase(),
@@ -772,9 +816,9 @@ class _AiPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.07),
+        color: color.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -795,10 +839,10 @@ class _AiPanel extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.accentPurple.withOpacity(0.15),
+                  color: AppColors.accentPurple.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: AppColors.accentPurple.withOpacity(0.4),
+                    color: AppColors.accentPurple.withValues(alpha: 0.4),
                   ),
                 ),
                 child: Text(
@@ -815,7 +859,10 @@ class _AiPanel extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             content,
-            style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),

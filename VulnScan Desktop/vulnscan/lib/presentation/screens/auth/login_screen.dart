@@ -47,10 +47,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
 
@@ -100,7 +97,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.accentGreen.withOpacity(0.25),
+                            color: AppColors.accentGreen.withValues(
+                              alpha: 0.25,
+                            ),
                             blurRadius: 16,
                             spreadRadius: 2,
                           ),
@@ -292,7 +291,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.accentGreen.withOpacity(0.1),
+                        color: AppColors.accentGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Row(

@@ -2,11 +2,10 @@
 
 import asyncio
 from datetime import datetime
-from typing import List
 from core.database import MongoDB
-from models.vulnerability import Vulnerability, SeverityLevel
-from utils.github_cloner import cleanup_repository, GitCloneError
-from utils.report_builder import build_vulnerability_summary, deduplicat_vulnerabilities
+from models.vulnerability import SeverityLevel
+from utils.github_cloner import cleanup_repository
+from utils.report_builder import build_vulnerability_summary, deduplicate_vulnerabilities
 from .semgrep_service import run_semgrep
 from .trufflehog_service import run_trufflehog
 from .npm_audit_service import run_npm_audit
@@ -95,7 +94,7 @@ async def run_parallel_scans(
         print(f"📊 Scan {scan_id}: collected {len(all_vulns)} total findings")
         
         # Deduplicate vulnerabilities
-        unique_vulns = deduplicat_vulnerabilities(all_vulns)
+        unique_vulns = deduplicate_vulnerabilities(all_vulns)
         print(f"📊 Scan {scan_id}: {len(unique_vulns)} unique findings after deduplication")
         
         # AI enrichment for Pro/Enterprise users (only for Critical/High)
@@ -119,7 +118,7 @@ async def run_parallel_scans(
         summary = build_vulnerability_summary(unique_vulns)
         
         # Convert vulnerabilities to dicts for MongoDB
-        vuln_dicts = [v.dict() for v in unique_vulns]
+        vuln_dicts = [v.model_dump() for v in unique_vulns]
         
         # Update scan with results
         await scan_collection.update_one(
@@ -129,7 +128,7 @@ async def run_parallel_scans(
                     "status": "completed",
                     "completed_at": datetime.utcnow(),
                     "progress": 100,
-                    "summary": summary.dict(),
+                    "summary": summary.model_dump(),
                     "vulnerabilities": vuln_dicts,
                     "semgrep_status": "completed",
                     "trufflehog_status": "completed",

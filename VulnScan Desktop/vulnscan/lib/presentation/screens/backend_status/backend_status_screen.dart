@@ -6,8 +6,7 @@ import 'package:vulnscan/config/constants/app_constants.dart';
 import 'package:vulnscan/config/theme/colors.dart';
 
 // Provider for backend health check
-final backendHealthProvider =
-    FutureProvider<Map<String, dynamic>>((ref) async {
+final backendHealthProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final httpClient = HttpClientService();
   return await httpClient.checkBackendHealth();
 });
@@ -97,8 +96,7 @@ class _BackendStatusScreenState extends ConsumerState<BackendStatusScreen>
                     pulseController: _pulseController,
                   ),
                   loading: () => _LoadingCard(),
-                  error: (error, stack) =>
-                      _ErrorCard(error: error.toString()),
+                  error: (error, stack) => _ErrorCard(error: error.toString()),
                 ),
                 const SizedBox(height: 16),
 
@@ -185,8 +183,9 @@ class _HealthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isHealthy = data['status'] == 'healthy';
-    final statusColor =
-        isHealthy ? AppColors.accentGreen : AppColors.severityHigh;
+    final statusColor = isHealthy
+        ? AppColors.accentGreen
+        : AppColors.severityHigh;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -203,7 +202,8 @@ class _HealthCard extends StatelessWidget {
               AnimatedBuilder(
                 animation: pulseController,
                 builder: (context, _) {
-                  final scale = 1.0 +
+                  final scale =
+                      1.0 +
                       (isHealthy ? 0.15 : 0.0) *
                           (0.5 + 0.5 * pulseController.value);
                   return Transform.scale(
@@ -216,7 +216,7 @@ class _HealthCard extends StatelessWidget {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: statusColor.withOpacity(0.5),
+                            color: statusColor.withValues(alpha: 0.5),
                             blurRadius: 8,
                             spreadRadius: 2,
                           ),
@@ -241,9 +241,9 @@ class _HealthCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.08),
+              color: statusColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: statusColor.withOpacity(0.4)),
+              border: Border.all(color: statusColor.withValues(alpha: 0.4)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,7 +264,7 @@ class _HealthCard extends StatelessWidget {
                     data['message'],
                     style: GoogleFonts.inter(
                       fontSize: 13,
-                      color: statusColor.withOpacity(0.8),
+                      color: statusColor.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -334,9 +334,9 @@ class _ErrorCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.08),
+        color: AppColors.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.error.withOpacity(0.4)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
@@ -359,7 +359,7 @@ class _ErrorCard extends StatelessWidget {
                   error,
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: AppColors.error.withOpacity(0.8),
+                    color: AppColors.error.withValues(alpha: 0.8),
                   ),
                 ),
               ],
@@ -410,7 +410,9 @@ class _EndpointsCard extends StatelessWidget {
             final ep = entry.value;
             final isLast = entry.key == _endpoints.length - 1;
             final isGet = ep['method'] == 'GET';
-            final methodColor = isGet ? AppColors.accentGreen : AppColors.accentBlue;
+            final methodColor = isGet
+                ? AppColors.accentGreen
+                : AppColors.accentBlue;
 
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -425,13 +427,13 @@ class _EndpointsCard extends StatelessWidget {
                 children: [
                   Container(
                     width: 46,
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 3,
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 3),
                     decoration: BoxDecoration(
-                      color: methodColor.withOpacity(0.12),
+                      color: methodColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: methodColor.withOpacity(0.4)),
+                      border: Border.all(
+                        color: methodColor.withValues(alpha: 0.4),
+                      ),
                     ),
                     child: Center(
                       child: Text(
@@ -512,11 +514,7 @@ class _ConfigCard extends StatelessWidget {
             mono: true,
           ),
           const Divider(height: 1, color: AppColors.borderDefault),
-          _ConfigRow(
-            label: 'Environment',
-            value: 'Development',
-            mono: false,
-          ),
+          _ConfigRow(label: 'Environment', value: 'Development', mono: false),
         ],
       ),
     );

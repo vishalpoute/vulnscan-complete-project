@@ -50,7 +50,8 @@ class _ScanError {
       return _ScanError(
         title: 'Subscription / Quota Error',
         detail: error.message,
-        hint: 'You may have exceeded your monthly scan limit. Upgrade your plan.',
+        hint:
+            'You may have exceeded your monthly scan limit. Upgrade your plan.',
         color: AppColors.severityMedium,
         icon: Icons.workspace_premium_outlined,
       );
@@ -58,11 +59,20 @@ class _ScanError {
     if (error is ServerFailure) {
       final code = error.statusCode;
       String hint;
-      if (code == 500) hint = 'Internal server error. The backend crashed or the database is unreachable.';
-      else if (code == 503) hint = 'Backend service unavailable. It may be starting up or overloaded.';
-      else if (code == 404) hint = 'Scan not found. It may have been deleted or the scan ID is invalid.';
-      else if (code == 422) hint = 'Invalid request data sent to the server. Check the repository URL.';
-      else hint = 'An unexpected server error occurred (HTTP $code).';
+      if (code == 500) {
+        hint =
+            'Internal server error. The backend crashed or the database is unreachable.';
+      } else if (code == 503)
+        hint =
+            'Backend service unavailable. It may be starting up or overloaded.';
+      else if (code == 404)
+        hint =
+            'Scan not found. It may have been deleted or the scan ID is invalid.';
+      else if (code == 422)
+        hint =
+            'Invalid request data sent to the server. Check the repository URL.';
+      else
+        hint = 'An unexpected server error occurred (HTTP $code).';
       return _ScanError(
         title: 'Server Error${code != null ? " (HTTP $code)" : ""}',
         detail: error.message,
@@ -73,16 +83,21 @@ class _ScanError {
     }
     // Generic / connection refused
     final msg = error.toString();
-    if (msg.contains('connection') || msg.contains('SocketException') || msg.contains('refused')) {
+    if (msg.contains('connection') ||
+        msg.contains('SocketException') ||
+        msg.contains('refused')) {
       return _ScanError(
         title: 'Backend Unreachable',
         detail: 'Cannot connect to localhost:8000',
-        hint: 'The FastAPI backend is not running. Start it with: uvicorn main:app --reload',
+        hint:
+            'The FastAPI backend is not running. Start it with: uvicorn main:app --reload',
         color: AppColors.severityHigh,
         icon: Icons.cloud_off_outlined,
       );
     }
-    if (msg.contains('database') || msg.contains('mongo') || msg.contains('DB')) {
+    if (msg.contains('database') ||
+        msg.contains('mongo') ||
+        msg.contains('DB')) {
       return _ScanError(
         title: 'Database Error',
         detail: msg,
@@ -103,8 +118,10 @@ class _ScanError {
 
 // ── Stream provider ───────────────────────────────────────────────────────────
 
-final scanProgressProvider =
-    StreamProvider.family<ScanProgress, String>((ref, scanId) async* {
+final scanProgressProvider = StreamProvider.family<ScanProgress, String>((
+  ref,
+  scanId,
+) async* {
   final api = ApiDatasource(dio: HttpClientService().dio);
 
   // First fetch
@@ -142,18 +159,22 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
           children: [
             const Icon(Icons.radar, color: AppColors.accentGreen, size: 18),
             const SizedBox(width: 8),
-            Text('Scan Progress',
-                style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary)),
+            Text(
+              'Scan Progress',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
           ],
         ),
         leading: _navigationTriggered
             ? null
             : IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context)),
+                onPressed: () => Navigator.pop(context),
+              ),
       ),
       body: progressAsync.when(
         data: (progress) {
@@ -163,14 +184,17 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
             Future.microtask(() {
               if (mounted) {
                 AppNavigator.pushReplacementNamed(
-                    AppRoutes.scanReport, arguments: progress.scanId);
+                  AppRoutes.scanReport,
+                  arguments: progress.scanId,
+                );
               }
             });
           }
           return _buildProgressBody(progress);
         },
         loading: () => const Center(
-            child: CircularProgressIndicator(color: AppColors.accentGreen)),
+          child: CircularProgressIndicator(color: AppColors.accentGreen),
+        ),
         error: (error, stack) => _buildErrorBody(error, stack),
       ),
     );
@@ -190,11 +214,14 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
             const SizedBox(height: 20),
 
             // Tool rows
-            Text('Security Tools',
-                style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary)),
+            Text(
+              'Security Tools',
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
+            ),
             const SizedBox(height: 10),
             Container(
               decoration: BoxDecoration(
@@ -205,8 +232,9 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
               child: Column(
                 children: progress.toolProgress.asMap().entries.map((e) {
                   return _ToolRow(
-                      tool: e.value,
-                      isLast: e.key == progress.toolProgress.length - 1);
+                    tool: e.value,
+                    isLast: e.key == progress.toolProgress.length - 1,
+                  );
                 }).toList(),
               ),
             ),
@@ -230,10 +258,13 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
                   foregroundColor: AppColors.error,
                   side: const BorderSide(color: AppColors.error),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6)),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
-                child: Text('Cancel Scan',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                child: Text(
+                  'Cancel Scan',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                ),
               ),
             ],
           ],
@@ -259,7 +290,7 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
               decoration: BoxDecoration(
                 color: AppColors.bgPrimary,
                 borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: err.color.withOpacity(0.5)),
+                border: Border.all(color: err.color.withValues(alpha: 0.5)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -277,21 +308,27 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
                     children: [
                       Icon(err.icon, color: err.color, size: 22),
                       const SizedBox(width: 10),
-                      Text(err.title,
-                          style: GoogleFonts.inter(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: err.color)),
+                      Text(
+                        err.title,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: err.color,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 14),
 
                   // Detail
-                  Text('Error Detail',
-                      style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textSecondary)),
+                  Text(
+                    'Error Detail',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                   const SizedBox(height: 6),
                   Container(
                     width: double.infinity,
@@ -301,9 +338,13 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: AppColors.borderDefault),
                     ),
-                    child: SelectableText(err.detail,
-                        style: GoogleFonts.jetBrainsMono(
-                            fontSize: 12, color: AppColors.error)),
+                    child: SelectableText(
+                      err.detail,
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 12,
+                        color: AppColors.error,
+                      ),
+                    ),
                   ),
 
                   // Hint
@@ -312,22 +353,29 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.accentBlue.withOpacity(0.07),
+                        color: AppColors.accentBlue.withValues(alpha: 0.07),
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
-                            color: AppColors.accentBlue.withOpacity(0.3)),
+                          color: AppColors.accentBlue.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.lightbulb_outline,
-                              size: 15, color: AppColors.accentBlue),
+                          const Icon(
+                            Icons.lightbulb_outline,
+                            size: 15,
+                            color: AppColors.accentBlue,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(err.hint!,
-                                style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: AppColors.textSecondary)),
+                            child: Text(
+                              err.hint!,
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -354,23 +402,37 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.fingerprint,
-                      size: 14, color: AppColors.textSubtle),
+                  const Icon(
+                    Icons.fingerprint,
+                    size: 14,
+                    color: AppColors.textSubtle,
+                  ),
                   const SizedBox(width: 8),
-                  Text('Scan ID: ',
-                      style: GoogleFonts.inter(
-                          fontSize: 12, color: AppColors.textSecondary)),
+                  Text(
+                    'Scan ID: ',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                   Expanded(
-                    child: SelectableText(widget.scanId,
-                        style: GoogleFonts.jetBrainsMono(
-                            fontSize: 12, color: AppColors.textCode)),
+                    child: SelectableText(
+                      widget.scanId,
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 12,
+                        color: AppColors.textCode,
+                      ),
+                    ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.copy_outlined,
-                        size: 14, color: AppColors.textSubtle),
+                    icon: const Icon(
+                      Icons.copy_outlined,
+                      size: 14,
+                      color: AppColors.textSubtle,
+                    ),
                     tooltip: 'Copy scan ID',
-                    onPressed: () => Clipboard.setData(
-                        ClipboardData(text: widget.scanId)),
+                    onPressed: () =>
+                        Clipboard.setData(ClipboardData(text: widget.scanId)),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                   ),
@@ -390,10 +452,10 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
                         ref.invalidate(scanProgressProvider(widget.scanId)),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.accentGreen,
-                      side:
-                          const BorderSide(color: AppColors.accentGreen),
+                      side: const BorderSide(color: AppColors.accentGreen),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                     ),
                   ),
                 ),
@@ -405,10 +467,10 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.textSecondary,
-                      side:
-                          const BorderSide(color: AppColors.borderDefault),
+                      side: const BorderSide(color: AppColors.borderDefault),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(6)),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                     ),
                   ),
                 ),
@@ -424,19 +486,25 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Cancel Scan',
-            style: GoogleFonts.inter(
-                fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-        content: Text('Are you sure you want to cancel this scan?',
-            style: GoogleFonts.inter(color: AppColors.textSecondary)),
+        title: Text(
+          'Cancel Scan',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to cancel this scan?',
+          style: GoogleFonts.inter(color: AppColors.textSecondary),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('No')),
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('No'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
-            style:
-                ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text('Yes, Cancel'),
           ),
         ],
@@ -444,15 +512,18 @@ class _ScanProgressScreenState extends ConsumerState<ScanProgressScreen> {
     );
     if (confirmed == true && mounted) {
       try {
-        await ApiDatasource(dio: HttpClientService().dio)
-            .cancelScan(widget.scanId);
+        await ApiDatasource(
+          dio: HttpClientService().dio,
+        ).cancelScan(widget.scanId);
         if (mounted) Navigator.pop(context);
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('Cancel failed: $e'),
-            backgroundColor: AppColors.error,
-          ));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Cancel failed: $e'),
+              backgroundColor: AppColors.error,
+            ),
+          );
         }
       }
     }
@@ -467,10 +538,14 @@ class _OverallProgressCard extends StatelessWidget {
 
   Color get _color {
     switch (progress.status) {
-      case 'scanning': return AppColors.accentBlue;
-      case 'completed': return AppColors.accentGreen;
-      case 'failed': return AppColors.error;
-      default: return AppColors.textSecondary;
+      case 'scanning':
+        return AppColors.accentBlue;
+      case 'completed':
+        return AppColors.accentGreen;
+      case 'failed':
+        return AppColors.error;
+      default:
+        return AppColors.textSecondary;
     }
   }
 
@@ -486,16 +561,27 @@ class _OverallProgressCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('Overall Progress',
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Overall Progress',
                 style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary)),
-            Text('${progress.progressPercentage}%',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              Text(
+                '${progress.progressPercentage}%',
                 style: GoogleFonts.jetBrainsMono(
-                    fontSize: 22, fontWeight: FontWeight.w700, color: _color)),
-          ]),
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: _color,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
@@ -507,27 +593,39 @@ class _OverallProgressCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Row(children: [
-            Container(
-              width: 8, height: 8,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                color: _color, shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: _color.withOpacity(0.5), blurRadius: 6)],
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: _color,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: _color.withValues(alpha: 0.5),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Text(
-              progress.status == 'scanning'
-                  ? 'Scanning in progress...'
-                  : progress.status == 'completed'
-                      ? '✓  Scan completed successfully'
-                      : progress.status == 'failed'
-                          ? '✗  Scan failed'
-                          : 'Initializing...',
-              style: GoogleFonts.inter(
-                  fontSize: 12, color: _color, fontWeight: FontWeight.w500),
-            ),
-          ]),
+              Text(
+                progress.status == 'scanning'
+                    ? 'Scanning in progress...'
+                    : progress.status == 'completed'
+                    ? '✓  Scan completed successfully'
+                    : progress.status == 'failed'
+                    ? '✗  Scan failed'
+                    : 'Initializing...',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: _color,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -541,10 +639,14 @@ class _ToolRow extends StatelessWidget {
 
   Color get _color {
     switch (tool.status as String) {
-      case 'completed': return AppColors.accentGreen;
-      case 'running': return AppColors.accentBlue;
-      case 'failed': return AppColors.error;
-      default: return AppColors.textSubtle;
+      case 'completed':
+        return AppColors.accentGreen;
+      case 'running':
+        return AppColors.accentBlue;
+      case 'failed':
+        return AppColors.error;
+      default:
+        return AppColors.textSubtle;
     }
   }
 
@@ -577,69 +679,108 @@ class _ToolRow extends StatelessWidget {
       decoration: isLast
           ? null
           : const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.borderDefault))),
+              border: Border(
+                bottom: BorderSide(color: AppColors.borderDefault),
+              ),
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Container(
-              width: 10, height: 10,
-              decoration: BoxDecoration(
-                color: _color, shape: BoxShape.circle,
-                boxShadow: tool.status == 'running'
-                    ? [BoxShadow(color: _color.withOpacity(0.6), blurRadius: 8)]
-                    : null,
+          Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: _color,
+                  shape: BoxShape.circle,
+                  boxShadow: tool.status == 'running'
+                      ? [
+                          BoxShadow(
+                            color: _color.withValues(alpha: 0.6),
+                            blurRadius: 8,
+                          ),
+                        ]
+                      : null,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(_name,
-                    style: GoogleFonts.inter(
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _name,
+                      style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary)),
-                Text(_desc,
-                    style: GoogleFonts.jetBrainsMono(
-                        fontSize: 10, color: AppColors.textSubtle)),
-              ]),
-            ),
-            if (tool.vulnerabilitiesFound != null)
-              Container(
-                margin: const EdgeInsets.only(right: 10),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: AppColors.bgSecondary,
-                  borderRadius: BorderRadius.circular(20),
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      _desc,
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 10,
+                        color: AppColors.textSubtle,
+                      ),
+                    ),
+                  ],
                 ),
-                child: Text('${tool.vulnerabilitiesFound} found',
-                    style: GoogleFonts.jetBrainsMono(
-                        fontSize: 10, color: AppColors.textSecondary)),
               ),
-            _StatusBadge(status: tool.status as String, color: _color),
-          ]),
+              if (tool.vulnerabilitiesFound != null)
+                Container(
+                  margin: const EdgeInsets.only(right: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.bgSecondary,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${tool.vulnerabilitiesFound} found',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 10,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+              _StatusBadge(status: tool.status as String, color: _color),
+            ],
+          ),
           // Tool-level error message
           if (tool.status == 'failed' && tool.errorMessage != null) ...[
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.07),
+                color: AppColors.error.withValues(alpha: 0.07),
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: AppColors.error.withOpacity(0.3)),
-              ),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Icon(Icons.error_outline,
-                    color: AppColors.error, size: 13),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: SelectableText(
-                    tool.errorMessage as String,
-                    style: GoogleFonts.jetBrainsMono(
-                        fontSize: 11, color: AppColors.error),
-                  ),
+                border: Border.all(
+                  color: AppColors.error.withValues(alpha: 0.3),
                 ),
-              ]),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: AppColors.error,
+                    size: 13,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: SelectableText(
+                      tool.errorMessage as String,
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 11,
+                        color: AppColors.error,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ],
@@ -658,13 +799,18 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
-      child: Text(status.toUpperCase(),
-          style: GoogleFonts.inter(
-              fontSize: 10, fontWeight: FontWeight.w700, color: color)),
+      child: Text(
+        status.toUpperCase(),
+        style: GoogleFonts.inter(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
     );
   }
 }
@@ -683,39 +829,60 @@ class _TerminalPanel extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: AppColors.borderDefault),
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          _dot(const Color(0xFFFF5F57)),
-          const SizedBox(width: 6),
-          _dot(const Color(0xFFFFBD2E)),
-          const SizedBox(width: 6),
-          _dot(const Color(0xFF28C840)),
-          const SizedBox(width: 12),
-          Text('vulnscan-scanner — scan: $scanId',
-              style: GoogleFonts.jetBrainsMono(
-                  fontSize: 10, color: AppColors.textSubtle)),
-        ]),
-        const SizedBox(height: 10),
-        _line(r'$ docker run --rm vulnscan/scanner', AppColors.accentGreen),
-        const SizedBox(height: 3),
-        _line('> Cloning repository into isolated container...', AppColors.textSecondary),
-        const SizedBox(height: 3),
-        _line('> Running security tools in parallel...', AppColors.textSecondary),
-        const SizedBox(height: 3),
-        if (status == 'scanning')
-          _line('> ▌ Scanning... (polling every 3s)', AppColors.accentGreen)
-        else if (status == 'completed')
-          _line('> ✓ Scan complete. Container destroyed.', AppColors.accentGreen)
-        else if (status == 'failed')
-          _line('> ✗ Scan failed. Check errors above.', AppColors.error)
-        else
-          _line('> Initializing...', AppColors.textSubtle),
-      ]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _dot(const Color(0xFFFF5F57)),
+              const SizedBox(width: 6),
+              _dot(const Color(0xFFFFBD2E)),
+              const SizedBox(width: 6),
+              _dot(const Color(0xFF28C840)),
+              const SizedBox(width: 12),
+              Text(
+                'vulnscan-scanner — scan: $scanId',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 10,
+                  color: AppColors.textSubtle,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          _line(r'$ docker run --rm vulnscan/scanner', AppColors.accentGreen),
+          const SizedBox(height: 3),
+          _line(
+            '> Cloning repository into isolated container...',
+            AppColors.textSecondary,
+          ),
+          const SizedBox(height: 3),
+          _line(
+            '> Running security tools in parallel...',
+            AppColors.textSecondary,
+          ),
+          const SizedBox(height: 3),
+          if (status == 'scanning')
+            _line('> ▌ Scanning... (polling every 3s)', AppColors.accentGreen)
+          else if (status == 'completed')
+            _line(
+              '> ✓ Scan complete. Container destroyed.',
+              AppColors.accentGreen,
+            )
+          else if (status == 'failed')
+            _line('> ✗ Scan failed. Check errors above.', AppColors.error)
+          else
+            _line('> Initializing...', AppColors.textSubtle),
+        ],
+      ),
     );
   }
 
-  Widget _dot(Color c) =>
-      Container(width: 10, height: 10, decoration: BoxDecoration(color: c, shape: BoxShape.circle));
+  Widget _dot(Color c) => Container(
+    width: 10,
+    height: 10,
+    decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+  );
 
   Widget _line(String text, Color color) =>
       Text(text, style: GoogleFonts.jetBrainsMono(fontSize: 12, color: color));
@@ -730,27 +897,40 @@ class _ScanLevelError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.07),
+        color: AppColors.error.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.error.withOpacity(0.4)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
       ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Icon(Icons.error_outline, color: AppColors.error, size: 16),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Scan Error',
-                style: GoogleFonts.inter(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.error_outline, color: AppColors.error, size: 16),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Scan Error',
+                  style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.error)),
-            const SizedBox(height: 4),
-            SelectableText(message,
-                style: GoogleFonts.jetBrainsMono(
-                    fontSize: 12, color: AppColors.error.withOpacity(0.85))),
-          ]),
-        ),
-      ]),
+                    color: AppColors.error,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                SelectableText(
+                  message,
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 12,
+                    color: AppColors.error.withValues(alpha: 0.85),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -768,36 +948,52 @@ class _CollapsibleStackState extends State<_CollapsibleStack> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      GestureDetector(
-        onTap: () => setState(() => _expanded = !_expanded),
-        child: Row(children: [
-          Icon(_expanded ? Icons.expand_less : Icons.expand_more,
-              size: 15, color: AppColors.textSubtle),
-          const SizedBox(width: 6),
-          Text(_expanded ? 'Hide stack trace' : 'Show stack trace',
-              style: GoogleFonts.inter(
-                  fontSize: 12, color: AppColors.textSubtle)),
-        ]),
-      ),
-      if (_expanded) ...[
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: const Color(0xFF010409),
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: AppColors.borderDefault),
-          ),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SelectableText(widget.stack,
-                style: GoogleFonts.jetBrainsMono(
-                    fontSize: 10, color: AppColors.textSubtle)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Row(
+            children: [
+              Icon(
+                _expanded ? Icons.expand_less : Icons.expand_more,
+                size: 15,
+                color: AppColors.textSubtle,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                _expanded ? 'Hide stack trace' : 'Show stack trace',
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: AppColors.textSubtle,
+                ),
+              ),
+            ],
           ),
         ),
+        if (_expanded) ...[
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF010409),
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: AppColors.borderDefault),
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SelectableText(
+                widget.stack,
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 10,
+                  color: AppColors.textSubtle,
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
-    ]);
+    );
   }
 }

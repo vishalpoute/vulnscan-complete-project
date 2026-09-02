@@ -11,12 +11,12 @@ class AppTheme {
     double? height,
     double? letterSpacing,
   }) => GoogleFonts.inter(
-        fontSize: size,
-        fontWeight: weight,
-        color: color,
-        height: height,
-        letterSpacing: letterSpacing,
-      );
+    fontSize: size,
+    fontWeight: weight,
+    color: color,
+    height: height,
+    letterSpacing: letterSpacing,
+  );
 
   static TextStyle _mono(double size, FontWeight weight, Color color) =>
       GoogleFonts.jetBrainsMono(
@@ -26,7 +26,7 @@ class AppTheme {
       );
 
   // ── Dark Text Theme ─────────────────────────────────────────────
-  static TextTheme _darkTextTheme = TextTheme(
+  static final TextTheme _darkTextTheme = TextTheme(
     displayLarge: _inter(32, FontWeight.w700, AppColors.textPrimary),
     displayMedium: _inter(28, FontWeight.w700, AppColors.textPrimary),
     displaySmall: _inter(24, FontWeight.w700, AppColors.textPrimary),
@@ -45,7 +45,7 @@ class AppTheme {
   );
 
   // ── Light Text Theme ────────────────────────────────────────────
-  static TextTheme _lightTextTheme = TextTheme(
+  static final TextTheme _lightTextTheme = TextTheme(
     displayLarge: _inter(32, FontWeight.w700, AppColors.textLight),
     displayMedium: _inter(28, FontWeight.w700, AppColors.textLight),
     displaySmall: _inter(24, FontWeight.w700, AppColors.textLight),
@@ -74,10 +74,7 @@ class AppTheme {
         borderRadius: BorderRadius.circular(6),
         side: const BorderSide(color: Color(0xFF2ea043), width: 1),
       ),
-      textStyle: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-      ),
+      textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
     ),
   );
 
@@ -91,10 +88,7 @@ class AppTheme {
         borderRadius: BorderRadius.circular(6),
         side: const BorderSide(color: Color(0xFF2ea043), width: 1),
       ),
-      textStyle: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-      ),
+      textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
     ),
   );
 
@@ -146,8 +140,14 @@ class AppTheme {
       borderRadius: BorderRadius.circular(6),
       borderSide: const BorderSide(color: AppColors.accentBlue, width: 2),
     ),
-    labelStyle: GoogleFonts.inter(color: AppColors.textLightSecondary, fontSize: 14),
-    hintStyle: GoogleFonts.inter(color: AppColors.textLightSecondary, fontSize: 14),
+    labelStyle: GoogleFonts.inter(
+      color: AppColors.textLightSecondary,
+      fontSize: 14,
+    ),
+    hintStyle: GoogleFonts.inter(
+      color: AppColors.textLightSecondary,
+      fontSize: 14,
+    ),
   );
 
   // ── DARK THEME ───────────────────────────────────────────────────
@@ -230,7 +230,7 @@ class AppTheme {
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return AppColors.accentGreen.withOpacity(0.3);
+          return AppColors.accentGreen.withValues(alpha: 0.3);
         }
         return AppColors.bgSecondary;
       }),
@@ -247,7 +247,10 @@ class AppTheme {
     iconTheme: const IconThemeData(color: AppColors.textSecondary, size: 20),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: AppColors.bgSecondary,
-      contentTextStyle: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+      contentTextStyle: GoogleFonts.inter(
+        color: AppColors.textPrimary,
+        fontSize: 14,
+      ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(6),
         side: const BorderSide(color: AppColors.borderDefault),
@@ -345,12 +348,14 @@ class AppTheme {
     ),
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) return AppColors.accentGreenDim;
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.accentGreenDim;
+        }
         return Colors.grey;
       }),
       trackColor: WidgetStateProperty.resolveWith((states) {
         if (states.contains(WidgetState.selected)) {
-          return AppColors.accentGreenDim.withOpacity(0.3);
+          return AppColors.accentGreenDim.withValues(alpha: 0.3);
         }
         return Colors.grey.shade300;
       }),
@@ -363,7 +368,10 @@ class AppTheme {
       backgroundColor: AppColors.accentGreenDim,
       foregroundColor: Colors.white,
     ),
-    iconTheme: const IconThemeData(color: AppColors.textLightSecondary, size: 20),
+    iconTheme: const IconThemeData(
+      color: AppColors.textLightSecondary,
+      size: 20,
+    ),
     snackBarTheme: SnackBarThemeData(
       backgroundColor: AppColors.textLight,
       contentTextStyle: GoogleFonts.inter(color: Colors.white, fontSize: 14),

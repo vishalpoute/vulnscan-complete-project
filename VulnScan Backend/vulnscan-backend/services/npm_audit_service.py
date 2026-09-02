@@ -1,43 +1,54 @@
 """npm/pip dependency audit wrapper."""
 
-import subprocess
 import json
-from typing import List
+import subprocess
 from pathlib import Path
-from models.vulnerability import Vulnerability, SeverityLevel
+from typing import Any, List
+
+from models.vulnerability import SeverityLevel, Vulnerability
 
 
 async def run_npm_audit(repo_path: str) -> List[Vulnerability]:
-    """
-    Run npm audit and/or pip audit on dependencies.
-    Detects project type and runs appropriate auditor.
-    
-    Args:
-        repo_path: Path to repository to scan
-        
-    Returns:
-        List of vulnerable dependencies
-    """
-    vulnerabilities = []
-    repo_path = Path(repo_path)
-    
-    # Check for npm project (package.json)
-    if (repo_path / "package.json").exists():
-        vulnerabilities.extend(await _run_npm_audit(repo_path))
-    
-    # Check for Python project (requirements.txt or setup.py)
-    if (repo_path / "requirements.txt").exists() or (repo_path / "setup.py").exists():
-        vulnerabilities.extend(await _run_pip_audit(repo_path))
-    
+    """Run npm audit and/or Python dependency audit based on project files."""
+    vulnerabilities: list[Vulnerability] = []
+    project_path = Path(repo_path)
+
+    if (project_path / "package.json").exists():
+        vulnerabilities.extend(await _run_npm_audit(project_path))
+
+    if (project_path / "requirements.txt").exists() or (project_path / "setup.py").exists() or (project_path / "pyproject.toml").exists():
+        vulnerabilities.extend(await _run_pip_audit(project_path))
+
     return vulnerabilities
+
+
+def _severity_from_string(value: str | None) -> SeverityLevel:
+    severity_map = {
+        "critical": SeverityLevel.CRITICAL,
+        "high": SeverityLevel.HIGH,
+        "moderate": SeverityLevel.MEDIUM,
+        "medium": SeverityLevel.MEDIUM,
+        "low": SeverityLevel.LOW,
+        "info": SeverityLevel.INFO,
+    }
+    return severity_map.get((value or "").lower(), SeverityLevel.MEDIUM)
+
+
+def _first_advisory(via: Any) -> dict[str, Any]:
+    if isinstance(via, list):
+        for item in via:
+            if isinstance(item, dict):
+                return item
+    if isinstance(via, dict):
+        return via
+    return {}
 
 
 async def _run_npm_audit(repo_path: Path) -> List[Vulnerability]:
     """Run npm audit on Node.js project."""
-    vulnerabilities = []
-    
+    vulnerabilities: list[Vulnerability] = []
+
     try:
-        # Run npm audit with JSON output
         result = subprocess.run(
             ["npm", "audit", "--json"],
             cwd=str(repo_path),
@@ -45,68 +56,59 @@ async def _run_npm_audit(repo_path: Path) -> List[Vulnerability]:
             text=True,
             timeout=120,
         )
-        
+
         if result.returncode not in (0, 1):
             print(f"⚠ npm audit warning: {result.stderr}")
             return []
-        
+
         try:
-            data = json.loads(result.stdout)
+            data = json.loads(result.stdout or "{}")
         except json.JSONDecodeError:
             print("⚠ npm audit: Failed to parse JSON output")
             return []
-        
-        # Extract vulnerabilities from npm audit output
-        vulnerabilities_dict = data.get("vulnerabilities", {})
-        
-        for pkg_name, vuln_data in vulnerabilities_dict.items():
+
+        for pkg_name, vuln_data in (data.get("vulnerabilities") or {}).items():
             try:
-                severity_str = vuln_data.get("severity", "moderate").lower()
-                severity_map = {
-                    "critical": SeverityLevel.CRITICAL,
-                    "high": SeverityLevel.HIGH,
-                    "moderate": SeverityLevel.MEDIUM,
-                    "low": SeverityLevel.LOW,
-                }
-                severity = severity_map.get(severity_str, SeverityLevel.MEDIUM)
-                
+                advisory = _first_advisory(vuln_data.get("via"))
+                cves = advisory.get("cves") or advisory.get("cwe") or []
+                cve_id = cves[0] if isinstance(cves, list) and cves else None
+                severity = _severity_from_string(vuln_data.get("severity") or advisory.get("severity"))
+
                 vuln = Vulnerability(
-                    id=f"npm_{pkg_name}_{vuln_data.get('via', [{}])[0].get('cves', ['unknown'])[0]}",
+                    id=f"npm_{pkg_name}_{cve_id or advisory.get('source') or 'unknown'}",
                     type=f"Vulnerable {pkg_name}",
                     severity=severity,
-                    title=f"Vulnerable npm package: {pkg_name}",
-                    description=vuln_data.get("via", [{}])[0].get("title", "Vulnerability in dependency"),
+                    title=advisory.get("title") or f"Vulnerable npm package: {pkg_name}",
+                    description=advisory.get("title") or "Vulnerability in dependency",
                     file_path="package.json",
                     line_number=None,
-                    cve_id=vuln_data.get("via", [{}])[0].get("cves", [None])[0],
+                    cve_id=cve_id,
                     tool_source="npm_audit",
                 )
                 vulnerabilities.append(vuln)
-            except Exception as e:
-                print(f"⚠ npm audit: Failed to parse vulnerability: {e}")
+            except Exception as exc:
+                print(f"⚠ npm audit: Failed to parse vulnerability: {exc}")
                 continue
-        
+
         print(f"✓ npm audit found {len(vulnerabilities)} vulnerabilities")
         return vulnerabilities
-        
+
     except FileNotFoundError:
         print("⚠ npm not installed. Install Node.js to enable npm scanning.")
         return []
     except subprocess.TimeoutExpired:
         print("⚠ npm audit timed out (2 minutes)")
         return []
-    except Exception as e:
-        print(f"⚠ npm audit error: {e}")
+    except Exception as exc:
+        print(f"⚠ npm audit error: {exc}")
         return []
 
 
 async def _run_pip_audit(repo_path: Path) -> List[Vulnerability]:
-    """Run pip audit on Python project."""
-    vulnerabilities = []
-    
+    """Run pip-audit on Python project, falling back to safety if needed."""
+    vulnerabilities: list[Vulnerability] = []
+
     try:
-        # Run pip audit with JSON output (using safety for compatibility)
-        # First try pip-audit (newer tool)
         result = subprocess.run(
             ["pip-audit", "--desc", "--format", "json"],
             cwd=str(repo_path),
@@ -114,28 +116,39 @@ async def _run_pip_audit(repo_path: Path) -> List[Vulnerability]:
             text=True,
             timeout=120,
         )
-        
+
         if result.returncode not in (0, 1):
-            # Fallback to safety if pip-audit not available
             return await _run_safety_audit(repo_path)
-        
+
         try:
-            data = json.loads(result.stdout)
+            data = json.loads(result.stdout or "{}")
         except json.JSONDecodeError:
             print("⚠ pip-audit: Failed to parse JSON output")
             return []
-        
-        # Extract vulnerabilities from pip-audit output
-        for vuln_item in data.get("vulnerabilities", []):
+
+        # pip-audit v2 returns dependencies[].vulns[]. Older versions may return
+        # a top-level vulnerabilities list; support both shapes.
+        raw_vulnerabilities: list[dict[str, Any]] = []
+        if isinstance(data.get("dependencies"), list):
+            for dependency in data["dependencies"]:
+                for vuln in dependency.get("vulns", []):
+                    item = dict(vuln)
+                    item.setdefault("name", dependency.get("name"))
+                    raw_vulnerabilities.append(item)
+        else:
+            raw_vulnerabilities = data.get("vulnerabilities", []) or []
+
+        for vuln_item in raw_vulnerabilities:
             try:
-                severity_str = vuln_item.get("fix_versions", [])
-                severity = SeverityLevel.HIGH if severity_str else SeverityLevel.CRITICAL
-                
+                package_name = vuln_item.get("name") or vuln_item.get("package") or "package"
+                fix_versions = vuln_item.get("fix_versions") or []
+                severity = SeverityLevel.HIGH if fix_versions else SeverityLevel.CRITICAL
+
                 vuln = Vulnerability(
-                    id=f"pip_{vuln_item.get('id', 'unknown')}",
-                    type=f"Vulnerable {vuln_item.get('name', 'package')}",
+                    id=f"pip_{vuln_item.get('id', 'unknown')}_{package_name}",
+                    type=f"Vulnerable {package_name}",
                     severity=severity,
-                    title=f"Vulnerable pip package: {vuln_item.get('name', 'unknown')}",
+                    title=f"Vulnerable pip package: {package_name}",
                     description=vuln_item.get("description", "Vulnerability in Python dependency"),
                     file_path="requirements.txt",
                     line_number=None,
@@ -143,27 +156,27 @@ async def _run_pip_audit(repo_path: Path) -> List[Vulnerability]:
                     tool_source="pip_audit",
                 )
                 vulnerabilities.append(vuln)
-            except Exception as e:
-                print(f"⚠ pip-audit: Failed to parse vulnerability: {e}")
+            except Exception as exc:
+                print(f"⚠ pip-audit: Failed to parse vulnerability: {exc}")
                 continue
-        
+
         print(f"✓ pip-audit found {len(vulnerabilities)} vulnerabilities")
         return vulnerabilities
-        
+
     except FileNotFoundError:
         return await _run_safety_audit(repo_path)
     except subprocess.TimeoutExpired:
         print("⚠ pip-audit timed out (2 minutes)")
         return []
-    except Exception as e:
-        print(f"⚠ pip-audit error: {e}")
+    except Exception as exc:
+        print(f"⚠ pip-audit error: {exc}")
         return []
 
 
 async def _run_safety_audit(repo_path: Path) -> List[Vulnerability]:
     """Run safety audit as fallback for Python projects."""
-    vulnerabilities = []
-    
+    vulnerabilities: list[Vulnerability] = []
+
     try:
         result = subprocess.run(
             ["safety", "check", "--json"],
@@ -172,27 +185,27 @@ async def _run_safety_audit(repo_path: Path) -> List[Vulnerability]:
             text=True,
             timeout=120,
         )
-        
+
         if result.returncode not in (0, 1):
             print("⚠ safety check warning")
             return []
-        
+
         try:
-            data = json.loads(result.stdout)
-            # Safety returns list directly
+            data = json.loads(result.stdout or "[]")
             if isinstance(data, list):
                 data = {"vulnerabilities": data}
         except json.JSONDecodeError:
             print("⚠ safety: Failed to parse JSON output")
             return []
-        
+
         for vuln_item in data.get("vulnerabilities", []):
             try:
+                package_name = vuln_item.get("package") or vuln_item.get("name") or "package"
                 vuln = Vulnerability(
-                    id=f"safety_{vuln_item.get('id', 'unknown')}",
-                    type=f"Vulnerable {vuln_item.get('package', 'package')}",
+                    id=f"safety_{vuln_item.get('id', 'unknown')}_{package_name}",
+                    type=f"Vulnerable {package_name}",
                     severity=SeverityLevel.HIGH,
-                    title=f"Vulnerable Python package: {vuln_item.get('package', 'unknown')}",
+                    title=f"Vulnerable Python package: {package_name}",
                     description=vuln_item.get("description", "Vulnerability in Python dependency"),
                     file_path="requirements.txt",
                     line_number=None,
@@ -200,19 +213,19 @@ async def _run_safety_audit(repo_path: Path) -> List[Vulnerability]:
                     tool_source="safety",
                 )
                 vulnerabilities.append(vuln)
-            except Exception as e:
-                print(f"⚠ safety: Failed to parse vulnerability: {e}")
+            except Exception as exc:
+                print(f"⚠ safety: Failed to parse vulnerability: {exc}")
                 continue
-        
+
         print(f"✓ safety found {len(vulnerabilities)} vulnerabilities")
         return vulnerabilities
-        
+
     except FileNotFoundError:
         print("⚠ Neither pip-audit nor safety installed. Install with: pip install pip-audit")
         return []
     except subprocess.TimeoutExpired:
         print("⚠ safety check timed out (2 minutes)")
         return []
-    except Exception as e:
-        print(f"⚠ safety error: {e}")
+    except Exception as exc:
+        print(f"⚠ safety error: {exc}")
         return []

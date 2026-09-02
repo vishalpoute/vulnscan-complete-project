@@ -43,13 +43,15 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    _ringAnim = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _ringController, curve: Curves.linear),
-    );
+    _ringAnim = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _ringController, curve: Curves.linear));
 
-    _fadeAnim = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _fadeController, curve: Curves.easeOut),
-    );
+    _fadeAnim = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
 
     _initializeApp();
   }
@@ -117,7 +119,9 @@ class _SplashScreenState extends State<SplashScreen>
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.accentGreen.withOpacity(0.4),
+                                  color: AppColors.accentGreen.withValues(
+                                    alpha: 0.4,
+                                  ),
                                   blurRadius: 20,
                                   spreadRadius: 2,
                                 ),
@@ -152,10 +156,10 @@ class _SplashScreenState extends State<SplashScreen>
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.accentGreen.withOpacity(0.12),
+                      color: AppColors.accentGreen.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: AppColors.accentGreen.withOpacity(0.4),
+                        color: AppColors.accentGreen.withValues(alpha: 0.4),
                       ),
                     ),
                     child: Text(
@@ -203,7 +207,7 @@ class _GridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = AppColors.borderDefault.withOpacity(0.3)
+      ..color = AppColors.borderDefault.withValues(alpha: 0.3)
       ..strokeWidth = 1;
     const spacing = 32.0;
     for (double x = 0; x < size.width; x += spacing) {
@@ -233,7 +237,7 @@ class _RingPainter extends CustomPainter {
       final radius = maxR * p;
       final opacity = (1 - p) * 0.5;
       final paint = Paint()
-        ..color = AppColors.accentGreen.withOpacity(opacity)
+        ..color = AppColors.accentGreen.withValues(alpha: opacity)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5;
       canvas.drawCircle(center, radius, paint);
@@ -243,4 +247,3 @@ class _RingPainter extends CustomPainter {
   @override
   bool shouldRepaint(_RingPainter old) => old.progress != progress;
 }
-

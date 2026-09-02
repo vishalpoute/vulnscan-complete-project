@@ -44,7 +44,10 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
-    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+    if (name.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
       _showError('Please fill all fields');
       return;
     }
@@ -64,10 +67,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-      ),
+      SnackBar(content: Text(message), backgroundColor: AppColors.error),
     );
   }
 
@@ -117,7 +117,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.accentGreen.withOpacity(0.25),
+                            color: AppColors.accentGreen.withValues(
+                              alpha: 0.25,
+                            ),
                             blurRadius: 16,
                             spreadRadius: 2,
                           ),
@@ -255,8 +257,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       SizedBox(
                         height: 40,
                         child: ElevatedButton(
-                          onPressed:
-                              authState.isLoading ? null : _handleSignUp,
+                          onPressed: authState.isLoading ? null : _handleSignUp,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.accentGreenDim,
                             foregroundColor: Colors.white,
@@ -345,11 +346,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   }
 
   Widget _fieldLabel(String label) => Text(
-        label,
-        style: GoogleFonts.inter(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-        ),
-      );
+    label,
+    style: GoogleFonts.inter(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: AppColors.textPrimary,
+    ),
+  );
 }

@@ -41,8 +41,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 final friendlyName = user.displayName?.isNotEmpty == true
                     ? user.displayName!
                     : (user.email.contains('@')
-                        ? user.email.split('@').first
-                        : user.email);
+                          ? user.email.split('@').first
+                          : user.email);
                 final initial = friendlyName.isNotEmpty
                     ? friendlyName.substring(0, 1).toUpperCase()
                     : '?';
@@ -56,9 +56,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           height: 40,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.accentGreen.withOpacity(0.15),
+                            color: AppColors.accentGreen.withValues(
+                              alpha: 0.15,
+                            ),
                             border: Border.all(
-                              color: AppColors.accentGreen.withOpacity(0.5),
+                              color: AppColors.accentGreen.withValues(
+                                alpha: 0.5,
+                              ),
                               width: 1.5,
                             ),
                           ),
@@ -125,7 +129,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               loading: () => const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
                 child: Center(
-                  child: CircularProgressIndicator(color: AppColors.accentGreen),
+                  child: CircularProgressIndicator(
+                    color: AppColors.accentGreen,
+                  ),
                 ),
               ),
               error: (e, s) => const SizedBox(),
@@ -168,7 +174,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   );
                 }
                 if (snapshot.hasError) {
-                  return _ErrorCard(message: 'Failed to load scans: ${snapshot.error}');
+                  return _ErrorCard(
+                    message: 'Failed to load scans: ${snapshot.error}',
+                  );
                 }
 
                 final scans = snapshot.data ?? [];
@@ -203,7 +211,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     const SizedBox(height: 20),
 
                     // Pie chart
-                    if (totalCritical + totalHigh + totalMedium + totalLow > 0) ...[
+                    if (totalCritical + totalHigh + totalMedium + totalLow >
+                        0) ...[
                       _VulnPieChart(
                         critical: totalCritical,
                         high: totalHigh,
@@ -373,9 +382,9 @@ class _GitHubAlert extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.08),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.4)),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
@@ -439,11 +448,14 @@ class _QuotaCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 3,
+                ),
                 decoration: BoxDecoration(
-                  color: tierColor.withOpacity(0.15),
+                  color: tierColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: tierColor.withOpacity(0.5)),
+                  border: Border.all(color: tierColor.withValues(alpha: 0.5)),
                 ),
                 child: Text(
                   tier.toUpperCase(),
@@ -464,7 +476,9 @@ class _QuotaCard extends StatelessWidget {
               minHeight: 6,
               backgroundColor: AppColors.bgSecondary,
               valueColor: AlwaysStoppedAnimation<Color>(
-                progress > 0.8 ? AppColors.severityCritical : AppColors.accentGreen,
+                progress > 0.8
+                    ? AppColors.severityCritical
+                    : AppColors.accentGreen,
               ),
             ),
           ),
@@ -497,15 +511,45 @@ class _StatCardsRow extends StatelessWidget {
     final total = critical + high + medium + low;
     return Row(
       children: [
-        Expanded(child: _StatCard(label: 'Total', value: total, color: AppColors.accentBlue)),
+        Expanded(
+          child: _StatCard(
+            label: 'Total',
+            value: total,
+            color: AppColors.accentBlue,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _StatCard(label: 'Critical', value: critical, color: AppColors.severityCritical)),
+        Expanded(
+          child: _StatCard(
+            label: 'Critical',
+            value: critical,
+            color: AppColors.severityCritical,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _StatCard(label: 'High', value: high, color: AppColors.severityHigh)),
+        Expanded(
+          child: _StatCard(
+            label: 'High',
+            value: high,
+            color: AppColors.severityHigh,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _StatCard(label: 'Medium', value: medium, color: AppColors.severityMedium)),
+        Expanded(
+          child: _StatCard(
+            label: 'Medium',
+            value: medium,
+            color: AppColors.severityMedium,
+          ),
+        ),
         const SizedBox(width: 12),
-        Expanded(child: _StatCard(label: 'Low', value: low, color: AppColors.severityLow)),
+        Expanded(
+          child: _StatCard(
+            label: 'Low',
+            value: low,
+            color: AppColors.severityLow,
+          ),
+        ),
       ],
     );
   }
@@ -652,13 +696,29 @@ class _VulnPieChart extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _LegendItem(label: 'Critical', count: critical, color: AppColors.severityCritical),
+                  _LegendItem(
+                    label: 'Critical',
+                    count: critical,
+                    color: AppColors.severityCritical,
+                  ),
                   const SizedBox(height: 10),
-                  _LegendItem(label: 'High', count: high, color: AppColors.severityHigh),
+                  _LegendItem(
+                    label: 'High',
+                    count: high,
+                    color: AppColors.severityHigh,
+                  ),
                   const SizedBox(height: 10),
-                  _LegendItem(label: 'Medium', count: medium, color: AppColors.severityMedium),
+                  _LegendItem(
+                    label: 'Medium',
+                    count: medium,
+                    color: AppColors.severityMedium,
+                  ),
                   const SizedBox(height: 10),
-                  _LegendItem(label: 'Low', count: low, color: AppColors.severityLow),
+                  _LegendItem(
+                    label: 'Low',
+                    count: low,
+                    color: AppColors.severityLow,
+                  ),
                 ],
               ),
             ],
@@ -692,7 +752,10 @@ class _LegendItem extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           '$label: ',
-          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+          ),
         ),
         Text(
           '$count',
@@ -716,10 +779,8 @@ class _ScanRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => AppNavigator.pushNamed(
-        AppRoutes.scanReport,
-        arguments: scan.id,
-      ),
+      onTap: () =>
+          AppNavigator.pushNamed(AppRoutes.scanReport, arguments: scan.id),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
@@ -804,9 +865,9 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.5)),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -859,10 +920,7 @@ class _EmptyScansState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Paste a GitHub URL to start scanning for vulnerabilities.',
-            style: GoogleFonts.inter(
-              fontSize: 13,
-              color: AppColors.textSubtle,
-            ),
+            style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSubtle),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 20),
@@ -887,9 +945,9 @@ class _ErrorCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.08),
+        color: AppColors.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.error.withOpacity(0.4)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
