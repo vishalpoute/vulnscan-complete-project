@@ -1,5 +1,7 @@
-# Launch Screen Assets
+# iOS Launch Image Assets
 
-You can customize the launch screen with your own desired assets by replacing the image files in this directory.
+This asset catalog contains launch images for the iOS application.
 
-You can also do it by opening your Flutter project's Xcode project with `open ios/Runner.xcworkspace`, selecting `Runner/Assets.xcassets` in the Project Navigator and dropping in the desired images.
+Replace the existing images while preserving the filenames and asset mappings in `Contents.json`, or update the mappings when adding new files. Preview the launch screen in Xcode and test it on the iOS devices you intend to support.
+
+Application setup and project status are documented in the repository's main README.
