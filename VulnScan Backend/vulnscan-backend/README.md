@@ -1,113 +1,39 @@
-# VulnScan Backend API
+# VulnScan Backend
 
-FastAPI backend for the VulnScan vulnerability scanning application.
+FastAPI service for authentication, scan orchestration, finding reports, users, administration and payment-related routes.
 
-## Project Structure
+## Architecture
 
-```
-vulnscan-backend/
-├── main.py                      # FastAPI application entry point
-├── requirements.txt             # Python dependencies
-├── .env.example                 # Environment variables template
-│
-├── core/                        # Core configuration and setup
-│   ├── config.py               # Environment settings (pydantic)
-│   ├── security.py             # Firebase token verification
-│   └── database.py             # MongoDB Motor connection
-│
-├── models/                      # Pydantic data models
-│   ├── scan.py                 # Scan request/response models
-│   ├── user.py                 # User profile and subscription models
-│   └── vulnerability.py        # Vulnerability and finding models
-│
-├── routers/                     # API endpoint routes
-│   ├── auth.py                 # POST /auth/verify (no auth required)
-│   ├── scans.py                # Scan CRUD endpoints
-│   ├── users.py                # User profile and account endpoints
-│   └── payments.py             # Payment/subscription endpoints
-│
-├── services/                    # Business logic and tool integrations
-│   ├── scan_orchestrator.py    # Parallel scan execution
-│   ├── semgrep_service.py      # Semgrep SAST scanner
-│   ├── trufflehog_service.py   # Secret scanner
-│   ├── npm_audit_service.py    # Dependency audit
-│   ├── mobsf_service.py        # Mobile app scanner
-│   └── ai_service.py           # Claude/GPT integration
-│
-└── utils/                       # Utility functions
-    ├── github_cloner.py        # GitHub repo cloning
-    └── report_builder.py       # Result aggregation
+| Directory | Purpose |
+| --- | --- |
+| `core/` | Configuration, Firebase verification and database connections |
+| `routers/` | HTTP endpoints registered under `/api` |
+| `services/` | Scanner integrations and AI-assisted reporting |
+| `models/` | Request, response and finding models |
+| `utils/` | Repository cloning and report utilities |
+
+## Run locally
+
+Create a Python virtual environment and activate it for your operating system. Install the dependencies:
+
+```sh
+python -m pip install -r requirements.txt
 ```
 
-## API Endpoints
+Copy `.env.example` to a local `.env` and configure Firebase service credentials, database connections and any scanner or AI provider you intend to use. Keep privileged credentials outside Git.
 
-### Authentication (No Token Required)
-- `POST /auth/verify` - Verify Firebase token
-
-### Scans (Requires Firebase Token)
-- `POST /scans` - Create new scan
-- `GET /scans` - List user's scans
-- `GET /scans/{scan_id}/status` - Check scan progress
-- `GET /scans/{scan_id}/report` - Get full scan report
-- `DELETE /scans/{scan_id}` - Delete scan
-
-### Users (Requires Firebase Token)
-- `GET /user/subscription` - Get subscription info
-- `DELETE /user/account` - Delete account
-
-### Payments (Requires Firebase Token)
-- `POST /payments/create-order` - Create payment order
-
-## Setup
-
-1. Create `.env` from `.env.example`:
-```bash
-cp .env.example .env
+```sh
+python -m uvicorn main:app --reload
 ```
 
-2. Fill in required environment variables:
-   - Firebase credentials
-   - MongoDB connection string
-   - API keys (optional)
+Open `http://localhost:8000/docs` for the generated API reference. The root `/` endpoint exposes service health; application routes use the `/api` prefix.
 
-3. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+## Authentication and integrations
 
-4. Run the server:
-```bash
-python main.py
-```
+Protected routes verify Firebase ID tokens. Scanner tools and external services need their own installation or credentials. Inspect the relevant service implementation and environment template before enabling an integration.
 
-Or with uvicorn directly:
-```bash
-uvicorn main:app --reload
-```
+## Status
 
-## Authentication
+Academic development project. Payment-related routes and provider integrations are implementation areas, not evidence of a validated production service. Review CORS settings, authorization, scanner isolation and deployment configuration before public deployment.
 
-All endpoints except `/auth/verify` require a Firebase ID token in the Authorization header:
-
-```
-Authorization: Bearer <firebase_id_token>
-```
-
-The token is verified using Firebase Admin SDK. The user's `uid` is extracted and used to filter data from MongoDB.
-
-## Database
-
-MongoDB with Motor async driver:
-- Connects on startup
-- Verifies connection with ping
-- Closes gracefully on shutdown
-
-## Implementation Status
-
-- [x] Project structure and configuration
-- [x] Pydantic models
-- [x] Route stubs with 501 responses
-- [ ] Service implementations (Semgrep, TruffleHog, etc.)
-- [ ] Background task scanning
-- [ ] Result aggregation and deduplication
-- [ ] AI analysis integration
+See the [complete project](../../README.md) for client and admin setup.
