@@ -1,74 +1,32 @@
-# VulnScan Admin - Flutter Web
+# VulnScan Admin Interface
 
-Admin dashboard for VulnScan vulnerability management system.
+Flutter web interface for VulnScan administration, using Firebase Auth, Riverpod and Dio.
 
-## Features
+## Interface areas
 
-- User management (view, delete users)
-- Scan history and status tracking
-- Analytics and vulnerability reports
-- User feedback management
-- Admin-only access with Firebase authentication
+User management, scan history, analytics and feedback screens. These require a running backend and appropriately authorized accounts.
 
-## Getting Started
+## Run locally
 
-### Prerequisites
+Configure your Firebase project using `firebase.example.json` and the [security guide](SECURITY.md), then run:
 
-- Flutter 3.0+
-- Web support enabled: `flutter config --enable-web`
-- Firebase project configured
-
-### Installation
-
-```bash
+```sh
 flutter pub get
+flutter run -d chrome --dart-define-from-file=firebase.local.json
 ```
 
-### Running
+## Backend configuration
 
-```bash
-flutter run -d chrome
+Review `lib/providers/api_provider.dart` before running. Its current base URL is `http://localhost:8000`, while the backend registers routes under `/api`. Align the URL and route paths with your running backend; the default values require correction for direct integration.
+
+## Build
+
+```sh
+flutter build web --release --dart-define-from-file=firebase.local.json
 ```
 
-### Building for Production
+## Status
 
-```bash
-flutter build web --release
-```
+Development interface. Admin access must be enforced by the backend; hiding interface controls is insufficient authorization.
 
-## Architecture
-
-- **Firebase Auth**: Admin-only authentication
-- **Riverpod**: State management
-- **Dio**: HTTP client for backend API communication
-- **Material 3**: UI framework
-
-## Project Structure
-
-```
-lib/
-├── main.dart                 # App entry point
-├── firebase_options.dart     # Firebase config
-├── providers/
-│   ├── auth_provider.dart   # Authentication state
-│   └── api_provider.dart    # Backend API communication
-└── screens/
-    ├── login_screen.dart
-    ├── dashboard_screen.dart
-    └── widgets/
-        ├── analytics_card.dart
-        ├── users_table.dart
-        ├── scans_table.dart
-        └── feedback_list.dart
-```
-
-## API Integration
-
-Connects to VulnScan backend at `http://localhost:8000` with endpoints:
-- `GET /admin/users` - List users
-- `GET /admin/scans` - List scans
-- `GET /admin/analytics` - Dashboard metrics
-- `DELETE /admin/users/{uid}` - Delete user
-- `GET /feedback` - List feedback
-
-All requests include Firebase auth token in Authorization header.
+See the [complete project](../../README.md) for the other components.
