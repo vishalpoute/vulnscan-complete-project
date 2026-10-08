@@ -41,7 +41,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyA0_v42c_J66nhExhyClDs58hxYEJYdqB0',
+    apiKey: String.fromEnvironment('FIREBASE_WEB_API_KEY'),
     appId: '1:917374329470:web:a45ede8ee2e04e067cee2f',
     messagingSenderId: '917374329470',
     projectId: 'vulnscan-finalyear',
@@ -50,7 +50,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBb2TRDXibDj8pvFV6iIJqkJrMUWev-ZRY',
+    apiKey: String.fromEnvironment('FIREBASE_ANDROID_API_KEY'),
     appId: '1:917374329470:android:70f76407ff121c287cee2f',
     messagingSenderId: '917374329470',
     projectId: 'vulnscan-finalyear',
@@ -58,7 +58,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCW45I4xDykZCToEFmHdSkj3bHG9jtrcQA',
+    apiKey: String.fromEnvironment('FIREBASE_IOS_API_KEY'),
     appId: '1:917374329470:ios:159c3685b0d808e37cee2f',
     messagingSenderId: '917374329470',
     projectId: 'vulnscan-finalyear',
@@ -67,7 +67,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCW45I4xDykZCToEFmHdSkj3bHG9jtrcQA',
+    apiKey: String.fromEnvironment('FIREBASE_MACOS_API_KEY'),
     appId: '1:917374329470:ios:159c3685b0d808e37cee2f',
     messagingSenderId: '917374329470',
     projectId: 'vulnscan-finalyear',
@@ -76,7 +76,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyA0_v42c_J66nhExhyClDs58hxYEJYdqB0',
+    apiKey: String.fromEnvironment('FIREBASE_WINDOWS_API_KEY'),
     appId: '1:917374329470:web:fc50acd8e5f65a127cee2f',
     messagingSenderId: '917374329470',
     projectId: 'vulnscan-finalyear',

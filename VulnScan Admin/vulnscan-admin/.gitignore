@@ -67,3 +67,16 @@ app.*.map.json
 
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
+
+# Local Firebase and credential configuration
+firebase.local.json
+**/google-services.json
+**/GoogleService-Info.plist
+**/*service-account*.json
+**/*serviceAccount*.json
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.jks

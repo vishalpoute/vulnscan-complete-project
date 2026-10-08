@@ -27,8 +27,8 @@ class HttpClientService {
         }
       }
     } catch (e) {
-      // .env not loaded — using default API base URL from AppConstants
-      _logger.d('No .env file found. Using default API_BASE_URL: $baseUrl');
+      // .env not loaded (expected on web platform)
+      _logger.d('Using default API_BASE_URL: $e');
     }
 
     dio = Dio(
@@ -64,31 +64,6 @@ class HttpClientService {
     _prefs = await SharedPreferences.getInstance();
     await _prefs.remove(AppConstants.storageKeyAuthToken);
     dio.options.headers.remove('Authorization');
-  }
-
-  Future<Map<String, dynamic>> checkBackendHealth() async {
-    try {
-      final response = await dio.get(
-        '/health',
-        options: Options(extra: {'skipAuth': true}),
-      );
-
-      return {
-        'status': response.statusCode == 200 ? 'healthy' : 'unhealthy',
-        'message': response.data['message'] ?? 'Backend is online',
-        'timestamp': DateTime.now().toIso8601String(),
-        'statusCode': response.statusCode,
-        'data': response.data,
-      };
-    } catch (e) {
-      _logger.e('Backend health check failed: $e');
-      return {
-        'status': 'unhealthy',
-        'message': 'Failed to connect to backend: ${e.toString()}',
-        'timestamp': DateTime.now().toIso8601String(),
-        'error': e.toString(),
-      };
-    }
   }
 }
 

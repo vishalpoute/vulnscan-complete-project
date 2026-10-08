@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'firebase_options.dart';
 import 'config/theme/app_theme.dart';
 import 'config/routing/app_router.dart';
@@ -24,9 +23,6 @@ Future<void> main() async {
       // This is normal in production
     }
   }
-
-  // Initialize Hive before any provider tries to open a box
-  await Hive.initFlutter();
 
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const ProviderScope(child: VulnScanApp()));

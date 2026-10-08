@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:vulnscan/config/routing/app_router.dart';
-import 'package:vulnscan/config/theme/colors.dart';
 import 'package:vulnscan/data/models/subscription_model.dart';
 import 'package:vulnscan/presentation/providers/auth_provider.dart';
 import 'package:vulnscan/presentation/providers/subscription_provider.dart';
@@ -18,240 +16,192 @@ class SettingsScreen extends ConsumerWidget {
     final themeMode = ref.watch(themeNotifierProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.bgCanvas,
-      appBar: AppBar(
-        title: Row(
+      appBar: AppBar(title: const Text('Settings')),
+      body: SingleChildScrollView(
+        child: Column(
           children: [
-            const Icon(Icons.settings_outlined, color: AppColors.accentGreen, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              'Settings',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
+            _buildProfileSection(context, authState),
+            const Divider(height: 32),
+            _buildSubscriptionSection(context, subscriptionState),
+            const Divider(height: 32),
+            _buildThemeSection(context, ref, themeMode),
+            const Divider(height: 32),
+            _buildSecuritySection(context),
+            const Divider(height: 32),
+            _buildDangerZone(context, ref),
+            const SizedBox(height: 32),
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Profile section
-                _SectionHeader(title: 'Profile'),
-                const SizedBox(height: 12),
-                _ProfileCard(authState: authState),
-                const SizedBox(height: 28),
+    );
+  }
 
-                // Subscription section
-                _SectionHeader(title: 'Subscription'),
-                const SizedBox(height: 12),
-                _SubscriptionCard(subscriptionState: subscriptionState),
-                const SizedBox(height: 28),
-
-                // Appearance
-                _SectionHeader(title: 'Appearance'),
-                const SizedBox(height: 12),
-                _SettingsCard(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildProfileSection(BuildContext context, AsyncValue<User?> authState) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Profile', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: authState.when(
+                data: (user) {
+                  if (user == null) return const SizedBox();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.dark_mode_outlined,
-                            size: 18,
-                            color: AppColors.textSecondary,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Dark Mode',
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Switch(
-                        value: themeMode == ThemeMode.dark,
-                        onChanged: (_) =>
-                            ref.read(themeNotifierProvider.notifier).toggle(),
-                      ),
+                      _buildItem(context, 'Name', user.displayName ?? 'Not set'),
+                      const SizedBox(height: 12),
+                      _buildItem(context, 'Email', user.email),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 28),
+                  );
+                },
+                loading: () => const CircularProgressIndicator(),
+                error: (e, st) => Text('Error: $e'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-                // Security
-                _SectionHeader(title: 'Security'),
-                const SizedBox(height: 12),
-                _SettingsCard(
+  Widget _buildSubscriptionSection(BuildContext context, AsyncValue<SubscriptionInfo?> subscriptionState) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Subscription', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          subscriptionState.when(
+            data: (sub) {
+              if (sub == null) return const SizedBox();
+              final progress = sub.scansLimit > 0 ? sub.scansUsed / sub.scansLimit : 0.0;
+              final color = _getTierColor(sub.tier);
+
+              return Card(
+                color: color.withValues(alpha: 0.1),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Change Password',
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'A password reset link will be sent to your email address.',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Password reset sent to email'),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.lock_reset_outlined, size: 16),
-                        label: const Text('Send Reset Link'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.textPrimary,
-                          side: const BorderSide(color: AppColors.borderDefault),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Plan', style: Theme.of(context).textTheme.bodyMedium),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(12)),
+                            child: Text(sub.tier.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
+                        ],
                       ),
+                      const SizedBox(height: 12),
+                      LinearProgressIndicator(value: progress, minHeight: 8, valueColor: AlwaysStoppedAnimation(color)),
+                      const SizedBox(height: 8),
+                      Text('${sub.scansUsed}/${sub.scansLimit} scans', style: Theme.of(context).textTheme.bodySmall),
+                      if (sub.tier == 'free') ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(onPressed: () => AppNavigator.pushNamed(AppRoutes.subscription), child: const Text('Upgrade')),
+                        ),
+                      ],
                     ],
                   ),
                 ),
-                const SizedBox(height: 28),
+              );
+            },
+            loading: () => const CircularProgressIndicator(),
+            error: (e, st) => Text('Error: $e'),
+          ),
+        ],
+      ),
+    );
+  }
 
-                // About / Backend
-                _SectionHeader(title: 'About'),
-                const SizedBox(height: 12),
-                _SettingsCard(
-                  child: Column(
-                    children: [
-                      _InfoRow(
-                        label: 'Version',
-                        value: 'v1.0.0',
-                        mono: true,
-                      ),
-                      const Divider(height: 20, color: AppColors.borderDefault),
-                      _InfoRow(label: 'Backend', value: 'FastAPI + Python', mono: false),
-                      const Divider(height: 20, color: AppColors.borderDefault),
-                      InkWell(
-                        onTap: () =>
-                            AppNavigator.pushNamed(AppRoutes.backendStatus),
-                        borderRadius: BorderRadius.circular(4),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Backend Status',
-                                style: GoogleFonts.inter(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    'View →',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 13,
-                                      color: AppColors.accentBlue,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
-
-                // Danger zone
-                _SectionHeader(title: 'Danger Zone', isDanger: true),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.error.withOpacity(0.4)),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Delete Account',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: AppColors.error,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Permanently delete your account and all associated data. This action cannot be undone.',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      OutlinedButton(
-                        onPressed: () => _showDeleteDialog(context, ref),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.error,
-                          side: const BorderSide(color: AppColors.error),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                        child: Text(
-                          'Delete Account',
-                          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 32),
-              ],
+  Widget _buildThemeSection(BuildContext context, WidgetRef ref, ThemeMode themeMode) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Appearance', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Dark Mode', style: Theme.of(context).textTheme.bodyLarge),
+                  Switch(value: themeMode == ThemeMode.dark, onChanged: (_) => ref.read(themeNotifierProvider.notifier).toggle()),
+                ],
+              ),
             ),
           ),
-        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSecuritySection(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Security', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Password reset would be sent to email')),
+                  ),
+                  icon: const Icon(Icons.lock),
+                  label: const Text('Change Password'),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDangerZone(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Danger Zone', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.red)),
+          const SizedBox(height: 16),
+          Card(
+            color: Colors.red.withValues(alpha: 0.05),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _showDeleteDialog(context, ref),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  icon: const Icon(Icons.delete, color: Colors.white),
+                  label: const Text('Delete Account', style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -260,283 +210,42 @@ class SettingsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(
-          'Delete Account',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        content: Text(
-          'This action cannot be undone. All your data will be permanently deleted.',
-          style: GoogleFonts.inter(color: AppColors.textSecondary),
-        ),
+        title: const Text('Delete Account'),
+        content: const Text('This action cannot be undone.'),
         actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          OutlinedButton(
             onPressed: () {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Account deletion initiated')),
               );
             },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.error,
-              side: const BorderSide(color: AppColors.error),
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Delete'),
           ),
         ],
       ),
     );
   }
-}
 
-// ── Sub-widgets ─────────────────────────────────────────────────────────────
+  Widget _buildItem(BuildContext context, String label, String value) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey)),
+      const SizedBox(height: 4),
+      Text(value, style: Theme.of(context).textTheme.bodyLarge),
+    ],
+  );
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final bool isDanger;
-
-  const _SectionHeader({required this.title, this.isDanger = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-        color: isDanger ? AppColors.error : AppColors.textPrimary,
-      ),
-    );
-  }
-}
-
-class _SettingsCard extends StatelessWidget {
-  final Widget child;
-
-  const _SettingsCard({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.bgPrimary,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.borderDefault),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _ProfileCard extends StatelessWidget {
-  final AsyncValue<User?> authState;
-
-  const _ProfileCard({required this.authState});
-
-  @override
-  Widget build(BuildContext context) {
-    return _SettingsCard(
-      child: authState.when(
-        data: (user) {
-          if (user == null) return const SizedBox();
-          return Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.accentGreen.withOpacity(0.15),
-                  border: Border.all(
-                    color: AppColors.accentGreen.withOpacity(0.4),
-                  ),
-                ),
-                child: Center(
-                  child: Text(
-                    (() {
-                      final name = (user.displayName?.isNotEmpty == true ? user.displayName! : user.email);
-                      return name.isNotEmpty ? name.substring(0, 1).toUpperCase() : '?';
-                    })(),
-                    style: GoogleFonts.jetBrainsMono(
-                      color: AppColors.accentGreen,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      user.displayName ?? 'User',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      user.email,
-                      style: GoogleFonts.inter(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-        loading: () => const CircularProgressIndicator(
-          color: AppColors.accentGreen,
-        ),
-        error: (e, s) =>
-            Text('Error: $e', style: const TextStyle(color: AppColors.error)),
-      ),
-    );
-  }
-}
-
-class _SubscriptionCard extends StatelessWidget {
-  final AsyncValue<SubscriptionInfo?> subscriptionState;
-
-  const _SubscriptionCard({required this.subscriptionState});
-
-  @override
-  Widget build(BuildContext context) {
-    return subscriptionState.when(
-      data: (sub) {
-        if (sub == null) return const SizedBox();
-        final progress = sub.scansLimit > 0 ? sub.scansUsed / sub.scansLimit : 0.0;
-        final tierColor = _tierColor(sub.tier);
-
-        return _SettingsCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Current Plan',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: tierColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: tierColor.withOpacity(0.5)),
-                    ),
-                    child: Text(
-                      sub.tier.toUpperCase(),
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: tierColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 6,
-                  backgroundColor: AppColors.bgSecondary,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    progress > 0.8 ? AppColors.error : tierColor,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '${sub.scansUsed} / ${sub.scansLimit} scans used',
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              if (sub.tier == 'free') ...[
-                const SizedBox(height: 14),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () =>
-                        AppNavigator.pushNamed(AppRoutes.subscription),
-                    child: const Text('Upgrade Plan'),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
-      loading: () => const Center(
-        child: CircularProgressIndicator(color: AppColors.accentGreen),
-      ),
-      error: (e, s) => const SizedBox(),
-    );
-  }
-
-  Color _tierColor(String tier) {
+  Color _getTierColor(String tier) {
     switch (tier.toLowerCase()) {
       case 'pro':
-        return AppColors.accentBlue;
+        return Colors.blue;
       case 'enterprise':
-        return AppColors.accentPurple;
+        return Colors.purple;
       default:
-        return AppColors.textSecondary;
+        return Colors.grey;
     }
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool mono;
-
-  const _InfoRow({required this.label, required this.value, required this.mono});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
-        ),
-        Text(
-          value,
-          style: mono
-              ? GoogleFonts.jetBrainsMono(
-                  fontSize: 13,
-                  color: AppColors.textCode,
-                )
-              : GoogleFonts.inter(fontSize: 13, color: AppColors.textPrimary),
-        ),
-      ],
-    );
   }
 }

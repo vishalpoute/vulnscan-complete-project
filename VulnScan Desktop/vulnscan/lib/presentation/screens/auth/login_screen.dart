@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:vulnscan/config/routing/app_router.dart';
-import 'package:vulnscan/config/theme/colors.dart';
 import 'package:vulnscan/presentation/providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -15,7 +13,6 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   late TextEditingController _emailController;
   late TextEditingController _passwordController;
-  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -49,7 +46,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: AppColors.error,
+        backgroundColor: Theme.of(context).colorScheme.error,
       ),
     );
   }
@@ -58,6 +55,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
 
+    // Navigate to dashboard on successful login
     authState.whenData((user) {
       if (user != null) {
         Future.microtask(
@@ -66,6 +64,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     });
 
+    // Show error on login failure
     authState.when(
       data: (_) {},
       loading: () {},
@@ -75,246 +74,64 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
 
     return Scaffold(
-      backgroundColor: AppColors.bgCanvas,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+      appBar: AppBar(title: const Text('VulnScan'), centerTitle: false),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
+            constraints: const BoxConstraints(maxWidth: 400),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Logo & branding
-                Column(
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.bgPrimary,
-                        border: Border.all(
-                          color: AppColors.accentGreen,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.accentGreen.withOpacity(0.25),
-                            blurRadius: 16,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.shield_outlined,
-                        color: AppColors.accentGreen,
-                        size: 32,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'VulnScan',
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Sign in to your account',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 32),
-
-                // Form card
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgPrimary,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.borderDefault),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Email
-                      Text(
-                        'Email address',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        enabled: !authState.isLoading,
-                        style: GoogleFonts.inter(
-                          color: AppColors.textPrimary,
-                          fontSize: 14,
-                        ),
-                        decoration: const InputDecoration(
-                          hintText: 'you@example.com',
-                          prefixIcon: Icon(Icons.alternate_email, size: 18),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Password
-                      Text(
-                        'Password',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        enabled: !authState.isLoading,
-                        onSubmitted: (_) => _handleLogin(),
-                        style: GoogleFonts.inter(
-                          color: AppColors.textPrimary,
-                          fontSize: 14,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Enter password',
-                          prefixIcon: const Icon(Icons.lock_outline, size: 18),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 18,
-                            ),
-                            onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Sign In button
-                      SizedBox(
-                        height: 40,
-                        child: ElevatedButton(
-                          onPressed: authState.isLoading ? null : _handleLogin,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.accentGreenDim,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: authState.isLoading
-                              ? const SizedBox(
-                                  height: 18,
-                                  width: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Text(
-                                  'Sign in',
-                                  style: GoogleFonts.inter(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ],
-                  ),
+                Icon(
+                  Icons.security,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
-                const SizedBox(height: 12),
-
-                // Sign up link
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 14,
-                    horizontal: 20,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.bgPrimary,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.borderDefault),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'New to VulnScan? ',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: authState.isLoading
-                            ? null
-                            : () => AppNavigator.pushNamed(AppRoutes.signup),
-                        child: Text(
-                          'Create an account',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: AppColors.accentBlue,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
                 const SizedBox(height: 24),
-                // Footer
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.accentGreen.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.verified_user_outlined,
-                            size: 11,
-                            color: AppColors.accentGreen,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Secure · Isolated · AI-Powered',
-                            style: GoogleFonts.inter(
-                              fontSize: 10,
-                              color: AppColors.accentGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                Text('Secure your next release.', style: Theme.of(context).textTheme.headlineLarge, textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                const Text('Sign in to review your scans and find security issues before they ship.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF6B7280), height: 1.6)),
+                const SizedBox(height: 32),
+                TextField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                  enabled: !authState.isLoading,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordController,
+                  decoration: const InputDecoration(
+                    labelText: 'Password',
+                    prefixIcon: Icon(Icons.lock),
+                  ),
+                  obscureText: true,
+                  enabled: !authState.isLoading,
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: authState.isLoading ? null : _handleLogin,
+                  child: authState.isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Login'),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: TextButton(
+                    onPressed: authState.isLoading
+                        ? null
+                        : () => AppNavigator.pushNamed(AppRoutes.signup),
+                    child: const Text('Don\'t have an account? Sign up'),
+                  ),
                 ),
               ],
             ),
@@ -324,3 +141,4 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 }
+

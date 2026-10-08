@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:vulnscan/config/routing/app_router.dart';
 import 'package:vulnscan/config/theme/colors.dart';
 import 'package:vulnscan/data/datasources/api_datasource.dart';
@@ -17,7 +16,7 @@ class NewScanScreen extends ConsumerStatefulWidget {
 
 class _NewScanScreenState extends ConsumerState<NewScanScreen> {
   late TextEditingController _urlController;
-  String _selectedScanType = 'web';
+  String _selectedScanType = 'web'; // 'web', 'android', 'ios'
   bool _isLoading = false;
   String? _urlError;
 
@@ -48,11 +47,13 @@ class _NewScanScreenState extends ConsumerState<NewScanScreen> {
   Future<void> _handleStartScan() async {
     final url = _urlController.text.trim();
 
+    // Validate URL
     if (!GitHubUrlValidator.isValid(url)) {
       _showError(GitHubUrlValidator.getErrorMessage(url));
       return;
     }
 
+    // Check quota
     final subscriptionState = ref.read(subscriptionProvider);
     final canCreate = subscriptionState.maybeWhen(
       data: (sub) => sub?.canCreateScan ?? false,
@@ -69,10 +70,11 @@ class _NewScanScreenState extends ConsumerState<NewScanScreen> {
     try {
       final httpClient = HttpClientService();
       final api = ApiDatasource(dio: httpClient.dio);
-      final scan = await api.createScan(
-        repositoryUrl: url,
-        scanType: _selectedScanType,
-      );
+
+      // Create scan
+      final scan = await api.createScan(repositoryUrl: url, scanType: _selectedScanType);
+
+      // Navigate to progress screen
       if (mounted) {
         AppNavigator.pushReplacementNamed(
           AppRoutes.scanProgress,
@@ -80,9 +82,13 @@ class _NewScanScreenState extends ConsumerState<NewScanScreen> {
         );
       }
     } catch (e) {
-      if (mounted) _showError('Failed to create scan: $e');
+      if (mounted) {
+        _showError('Failed to create scan: $e');
+      }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -90,18 +96,8 @@ class _NewScanScreenState extends ConsumerState<NewScanScreen> {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(
-          'Quota Exceeded',
-          style: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        content: Text(
-          'You have reached your monthly scan limit. Upgrade your plan to continue scanning.',
-          style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
-        ),
+        title: const Text('Quota Exceeded'),
+        content: const Text('You have reached your monthly scan limit. Upgrade your plan to continue scanning.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -121,7 +117,7 @@ class _NewScanScreenState extends ConsumerState<NewScanScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppColors.error),
+      SnackBar(content: Text(message), backgroundColor: Theme.of(context).colorScheme.error),
     );
   }
 
@@ -130,406 +126,136 @@ class _NewScanScreenState extends ConsumerState<NewScanScreen> {
     final subscriptionState = ref.watch(subscriptionProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.bgCanvas,
       appBar: AppBar(
-        title: Row(
-          children: [
-            const Icon(Icons.radar, color: AppColors.accentGreen, size: 18),
-            const SizedBox(width: 8),
-            Text(
-              'New Scan',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ],
-        ),
+        title: const Text('New Scan'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
+            constraints: const BoxConstraints(maxWidth: 500),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Page description
+                // GitHub URL section
                 Text(
-                  'Scan a GitHub Repository',
-                  style: GoogleFonts.inter(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
+                  'GitHub Repository',
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _urlController,
+                  onChanged: _validateUrl,
+                  decoration: InputDecoration(
+                    labelText: 'Repository URL',
+                    prefixIcon: const Icon(Icons.link),
+                    hintText: 'https://github.com/owner/repo',
+                    errorText: _urlError,
+                    errorMaxLines: 2,
+                    enabled: !_isLoading,
+                  ),
+                  keyboardType: TextInputType.url,
+                ),
+                const SizedBox(height: 24),
+
+                // Scan type selector
                 Text(
-                  'Paste a public GitHub URL to detect vulnerabilities across your codebase.',
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
+                  'Scan Type',
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-                const SizedBox(height: 28),
-
-                // Repository URL card
-                _ScanFormCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _FieldLabel(label: 'GitHub Repository URL'),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _urlController,
-                        onChanged: _validateUrl,
-                        enabled: !_isLoading,
-                        style: GoogleFonts.jetBrainsMono(
-                          fontSize: 13,
-                          color: AppColors.textPrimary,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'https://github.com/owner/repo',
-                          hintStyle: GoogleFonts.jetBrainsMono(
-                            fontSize: 13,
-                            color: AppColors.textSubtle,
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.link,
-                            size: 18,
-                            color: AppColors.textSubtle,
-                          ),
-                          errorText: _urlError,
-                          errorMaxLines: 2,
-                          errorStyle: GoogleFonts.inter(
-                            fontSize: 12,
-                            color: AppColors.error,
-                          ),
-                        ),
-                      ),
-                      if (_urlError == null &&
-                          _urlController.text.isNotEmpty &&
-                          GitHubUrlValidator.isValid(_urlController.text)) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.check_circle_outline,
-                              size: 14,
-                              color: AppColors.accentGreen,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Valid GitHub URL',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                color: AppColors.accentGreen,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
+                const SizedBox(height: 12),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(
+                      value: 'web',
+                      label: Text('Web App'),
+                      icon: Icon(Icons.language),
+                    ),
+                    ButtonSegment(
+                      value: 'android',
+                      label: Text('Android'),
+                      icon: Icon(Icons.android),
+                    ),
+                    ButtonSegment(
+                      value: 'ios',
+                      label: Text('iOS'),
+                      icon: Icon(Icons.phone_iphone),
+                    ),
+                  ],
+                  selected: {_selectedScanType},
+                  onSelectionChanged: (Set<String> newSelection) {
+                    setState(() => _selectedScanType = newSelection.first);
+                  },
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
 
-                // Scan type card
-                _ScanFormCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _FieldLabel(label: 'Scan Type'),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Choose what type of application to scan',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          _ScanTypeButton(
-                            value: 'web',
-                            selected: _selectedScanType,
-                            icon: Icons.language_outlined,
-                            label: 'Web App',
-                            description: 'Semgrep · npm audit',
-                            onTap: (v) =>
-                                setState(() => _selectedScanType = v),
-                          ),
-                          const SizedBox(width: 10),
-                          _ScanTypeButton(
-                            value: 'android',
-                            selected: _selectedScanType,
-                            icon: Icons.android_outlined,
-                            label: 'Android',
-                            description: 'MobSF · Bandit',
-                            onTap: (v) =>
-                                setState(() => _selectedScanType = v),
-                          ),
-                          const SizedBox(width: 10),
-                          _ScanTypeButton(
-                            value: 'ios',
-                            selected: _selectedScanType,
-                            icon: Icons.phone_iphone_outlined,
-                            label: 'iOS',
-                            description: 'MobSF · Semgrep',
-                            onTap: (v) =>
-                                setState(() => _selectedScanType = v),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Quota
+                // Quota info
                 subscriptionState.maybeWhen(
                   data: (subscription) => subscription != null
-                      ? _ScanFormCard(
-                          child: Row(
-                            children: [
-                              Icon(
-                                subscription.canCreateScan
-                                    ? Icons.check_circle_outline
-                                    : Icons.error_outline,
-                                size: 16,
-                                color: subscription.canCreateScan
-                                    ? AppColors.accentGreen
-                                    : AppColors.error,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                      ? Card(
+                          color: subscription.canCreateScan
+                              ? AppColors.success.withValues(alpha: 0.1)
+                              : AppColors.error.withValues(alpha: 0.1),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Monthly Quota',
+                                  style: Theme.of(context).textTheme.titleSmall,
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      'Monthly Quota',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: AppColors.textPrimary,
-                                      ),
+                                      '${subscription.scansUsed} / ${subscription.scansLimit} scans',
+                                      style: Theme.of(context).textTheme.bodyMedium,
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      '${subscription.scansUsed} / ${subscription.scansLimit} scans used',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: AppColors.textSecondary,
+                                    if (!subscription.canCreateScan)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.error,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Text(
+                                          'Limit Reached',
+                                          style: TextStyle(color: Colors.white, fontSize: 12),
+                                        ),
                                       ),
-                                    ),
                                   ],
                                 ),
-                              ),
-                              if (!subscription.canCreateScan)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.error.withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: AppColors.error.withOpacity(0.4),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'Limit Reached',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.error,
-                                    ),
-                                  ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
                         )
                       : const SizedBox(),
-                  loading: () => const SizedBox(),
+                  loading: () => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: CircularProgressIndicator(),
+                  ),
                   orElse: () => const SizedBox(),
                 ),
                 const SizedBox(height: 24),
 
                 // Start scan button
-                SizedBox(
-                  height: 44,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _handleStartScan,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accentGreenDim,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.radar,
-                                size: 18,
-                                color: Colors.white,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Start Security Scan',
-                                style: GoogleFonts.inter(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _handleStartScan,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                ),
-
-                const SizedBox(height: 16),
-                // Info note
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.lock_outline,
-                      size: 12,
-                      color: AppColors.textSubtle,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Code runs in isolated Docker containers and is never stored permanently.',
-                      style: GoogleFonts.inter(
-                        fontSize: 11,
-                        color: AppColors.textSubtle,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Start Scan'),
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ScanFormCard extends StatelessWidget {
-  final Widget child;
-
-  const _ScanFormCard({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.bgPrimary,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.borderDefault),
-      ),
-      child: child,
-    );
-  }
-}
-
-class _FieldLabel extends StatelessWidget {
-  final String label;
-
-  const _FieldLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: GoogleFonts.inter(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: AppColors.textPrimary,
-      ),
-    );
-  }
-}
-
-class _ScanTypeButton extends StatelessWidget {
-  final String value;
-  final String selected;
-  final IconData icon;
-  final String label;
-  final String description;
-  final void Function(String) onTap;
-
-  const _ScanTypeButton({
-    required this.value,
-    required this.selected,
-    required this.icon,
-    required this.label,
-    required this.description,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isSelected = value == selected;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => onTap(value),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.accentGreen.withOpacity(0.1)
-                : AppColors.bgSecondary,
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: isSelected ? AppColors.accentGreen : AppColors.borderDefault,
-              width: isSelected ? 2 : 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                size: 22,
-                color: isSelected ? AppColors.accentGreen : AppColors.textSecondary,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: isSelected ? AppColors.accentGreen : AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                description,
-                style: GoogleFonts.jetBrainsMono(
-                  fontSize: 9,
-                  color: AppColors.textSubtle,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
           ),
         ),
       ),

@@ -9,7 +9,6 @@ import 'package:vulnscan/presentation/screens/scan_report/scan_report_screen.dar
 import 'package:vulnscan/presentation/screens/settings/settings_screen.dart';
 import 'package:vulnscan/presentation/screens/subscription/subscription_screen.dart';
 import 'package:vulnscan/presentation/screens/admin/admin_panel_screen.dart';
-import 'package:vulnscan/presentation/screens/backend_status/backend_status_screen.dart';
 
 /// Route names
 class AppRoutes {
@@ -24,7 +23,6 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String subscription = '/subscription';
   static const String admin = '/admin';
-  static const String backendStatus = '/backend-status';
 }
 
 /// Navigation service
@@ -102,9 +100,6 @@ class AppRouteGenerator {
 
       case AppRoutes.admin:
         return MaterialPageRoute(builder: (_) => const AdminPanelScreen());
-
-      case AppRoutes.backendStatus:
-        return MaterialPageRoute(builder: (_) => const BackendStatusScreen());
 
       // TODO: Add other routes as screens are implemented
       default:
