@@ -2,6 +2,7 @@
 
 import subprocess
 import shutil
+import re
 from pathlib import Path
 from typing import Optional
 from core.config import settings
@@ -10,6 +11,17 @@ from core.config import settings
 class GitCloneError(Exception):
     """Raised when GitHub cloning fails."""
     pass
+
+
+def _scan_directory(scan_id: str) -> Path:
+    """Keep clone and cleanup operations inside the configured scan directory."""
+    if not isinstance(scan_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", scan_id):
+        raise GitCloneError("Invalid scan ID")
+    root = Path(settings.TEMP_SCAN_DIR).resolve()
+    candidate = root / scan_id
+    if candidate.is_symlink() or candidate.resolve().parent != root:
+        raise GitCloneError("Scan directory escapes the configured temporary directory")
+    return candidate
 
 
 async def clone_repository(
@@ -31,7 +43,7 @@ async def clone_repository(
     Raises:
         GitCloneError: If cloning fails
     """
-    clone_path = Path(settings.TEMP_SCAN_DIR) / scan_id
+    clone_path = _scan_directory(scan_id)
     
     try:
         # Clean up if directory already exists
@@ -80,11 +92,11 @@ async def cleanup_repository(scan_id: str) -> None:
     Args:
         scan_id: Unique scan ID for temp directory
     """
-    clone_path = Path(settings.TEMP_SCAN_DIR) / scan_id
+    clone_path = _scan_directory(scan_id)
     
     try:
         if clone_path.exists():
             shutil.rmtree(clone_path)
-            print(f"✓ Cleaned up repository at {clone_path}")
+            print(f"Cleaned up repository at {clone_path}")
     except Exception as e:
-        print(f"⚠ Failed to clean up repository at {clone_path}: {e}")
+        print(f"Failed to clean up repository at {clone_path}: {e}")
