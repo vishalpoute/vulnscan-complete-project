@@ -58,7 +58,7 @@ async def clone_repository(
             if repo_url.startswith("https://"):
                 clone_url = repo_url.replace("https://", f"https://{github_token}@")
             else:
-                raise GitCloneError(f"Only HTTPS URLs supported. Got: {repo_url}")
+                raise GitCloneError("Only HTTPS URLs supported")
         else:
             clone_url = repo_url
         
@@ -72,17 +72,20 @@ async def clone_repository(
         
         if result.returncode != 0:
             raise GitCloneError(
-                f"Git clone failed: {result.stderr or result.stdout}"
+                f"Git clone failed (exit code {result.returncode})"
             )
         
         return str(clone_path)
         
     except subprocess.TimeoutExpired:
-        raise GitCloneError(f"Git clone timed out (60s) for {repo_url}")
+        raise GitCloneError("Git clone timed out (60s)") from None
     except FileNotFoundError:
         raise GitCloneError("Git command not found. Install Git to enable scanning.")
-    except Exception as e:
-        raise GitCloneError(f"Failed to clone repository: {str(e)}")
+    except GitCloneError:
+        raise
+    except Exception:
+        # Subprocess errors can include the command URL and private token.
+        raise GitCloneError("Failed to clone repository") from None
 
 
 async def cleanup_repository(scan_id: str) -> None:
