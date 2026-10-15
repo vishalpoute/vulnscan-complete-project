@@ -43,6 +43,25 @@ class ScanDirectoryTests(unittest.TestCase):
             with self.assertRaises(cloner.GitCloneError):
                 cloner._scan_directory("scan-1")
 
+    def test_invalid_repository_urls_do_not_touch_disk_or_run_git(self):
+        for url in ("--upload-pack=evil", "/local/repo", "file:///local/repo",
+                    "ssh://github.com/owner/repo", "https://evil.example/owner/repo",
+                    "https://github.com.evil.example/owner/repo", "https://token@github.com/o/r",
+                    "https://github.com/o/r?token=secret", "https://github.com/o/r#fragment",
+                    "https://github.com/o/..", "https://github.com/o/r/tree/main", None):
+            with self.subTest(url=url), patch.object(cloner.Path, "mkdir") as mkdir, patch.object(cloner.shutil, "rmtree") as delete, patch.object(cloner.subprocess, "run") as run:
+                with self.assertRaises(cloner.GitCloneError):
+                    asyncio.run(cloner.clone_repository(url, "safe-scan"))
+                mkdir.assert_not_called()
+                delete.assert_not_called()
+                run.assert_not_called()
+
+    def test_https_github_urls_clone(self):
+        for url in ("https://github.com/example/repo", "https://github.com/example/repo.git", "https://github.com/example/repo/"):
+            with self.subTest(url=url), patch.object(cloner.subprocess, "run", return_value=types.SimpleNamespace(returncode=0)) as run:
+                asyncio.run(cloner.clone_repository(url, "valid-scan"))
+                self.assertIn(url, run.call_args.args[0])
+
     def test_clone_failures_do_not_expose_credentials(self):
         token = "synthetic-private-token"
         url = "https://github.com/example/private"
