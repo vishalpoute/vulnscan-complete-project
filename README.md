@@ -27,6 +27,12 @@ See the client's [configuration guide](VulnScan%20Desktop/vulnscan/SECURITY.md) 
 
 Academic project under development. The latest standalone Flutter client has been consolidated here. Portfolio screenshots use explicitly labeled sample findings, rather than a live assessment.
 
+## Dashboard preview
+
+![VulnScan dashboard with sample findings](https://heyvishal.antideploy.app/projects/vulnscan-dashboard.jpg)
+
+Captured from a local preview of the Flutter dashboard using sample findings. Configure Firebase, the backend and scanner services to run an actual assessment.
+
 ## Author
 
 [Vishal Poute](https://github.com/vishalpoute) · [Portfolio](https://heyvishal.antideploy.app)
