@@ -47,13 +47,13 @@ async def _run_npm_audit(repo_path: Path) -> List[Vulnerability]:
         )
         
         if result.returncode not in (0, 1):
-            print(f"⚠ npm audit warning: {result.stderr}")
+            print(f"npm audit warning: {result.stderr}")
             return []
         
         try:
             data = json.loads(result.stdout)
         except json.JSONDecodeError:
-            print("⚠ npm audit: Failed to parse JSON output")
+            print("npm audit: Failed to parse JSON output")
             return []
         
         # Extract vulnerabilities from npm audit output
@@ -70,33 +70,40 @@ async def _run_npm_audit(repo_path: Path) -> List[Vulnerability]:
                 }
                 severity = severity_map.get(severity_str, SeverityLevel.MEDIUM)
                 
+                # npm uses package-name strings for transitive findings and
+                # advisory objects for direct findings, sometimes in one list.
+                advisory = next(
+                    (item for item in vuln_data.get("via", []) if isinstance(item, dict)),
+                    {},
+                )
+                cve_id = next(iter(advisory.get("cves") or []), None)
                 vuln = Vulnerability(
-                    id=f"npm_{pkg_name}_{vuln_data.get('via', [{}])[0].get('cves', ['unknown'])[0]}",
+                    id=f"npm_{pkg_name}_{cve_id or 'unknown'}",
                     type=f"Vulnerable {pkg_name}",
                     severity=severity,
                     title=f"Vulnerable npm package: {pkg_name}",
-                    description=vuln_data.get("via", [{}])[0].get("title", "Vulnerability in dependency"),
+                    description=advisory.get("title", "Vulnerability in dependency"),
                     file_path="package.json",
                     line_number=None,
-                    cve_id=vuln_data.get("via", [{}])[0].get("cves", [None])[0],
+                    cve_id=cve_id,
                     tool_source="npm_audit",
                 )
                 vulnerabilities.append(vuln)
             except Exception as e:
-                print(f"⚠ npm audit: Failed to parse vulnerability: {e}")
+                print(f"npm audit: Failed to parse vulnerability: {e}")
                 continue
         
-        print(f"✓ npm audit found {len(vulnerabilities)} vulnerabilities")
+        print(f"npm audit found {len(vulnerabilities)} vulnerabilities")
         return vulnerabilities
         
     except FileNotFoundError:
-        print("⚠ npm not installed. Install Node.js to enable npm scanning.")
+        print("npm not installed. Install Node.js to enable npm scanning.")
         return []
     except subprocess.TimeoutExpired:
-        print("⚠ npm audit timed out (2 minutes)")
+        print("npm audit timed out (2 minutes)")
         return []
     except Exception as e:
-        print(f"⚠ npm audit error: {e}")
+        print(f"npm audit error: {e}")
         return []
 
 
