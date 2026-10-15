@@ -43,6 +43,15 @@ async def clone_repository(
     Raises:
         GitCloneError: If cloning fails
     """
+    # Validate before creating or deleting any scan directory. Git accepts local
+    # paths, alternate protocols and option-like sources; this service does not.
+    match = re.fullmatch(
+        r"https://github\.com/[A-Za-z0-9-]+/([A-Za-z0-9_.-]+)/?",
+        repo_url if isinstance(repo_url, str) else "",
+        flags=re.IGNORECASE,
+    )
+    if not match or match.group(1) in {".", "..", ".git"}:
+        raise GitCloneError("Use an HTTPS GitHub repository URL")
     clone_path = _scan_directory(scan_id)
     
     try:
