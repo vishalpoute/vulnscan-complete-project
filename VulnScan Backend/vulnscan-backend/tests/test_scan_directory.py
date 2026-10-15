@@ -43,6 +43,23 @@ class ScanDirectoryTests(unittest.TestCase):
             with self.assertRaises(cloner.GitCloneError):
                 cloner._scan_directory("scan-1")
 
+    def test_clone_failures_do_not_expose_credentials(self):
+        token = "synthetic-private-token"
+        url = "https://github.com/example/private"
+        cases = (
+            types.SimpleNamespace(returncode=128, stderr=f"fatal: https://{token}@github.com/example/private", stdout=""),
+            cloner.subprocess.TimeoutExpired(["git", f"https://{token}@github.com/example/private"], 60),
+            RuntimeError(f"command failed: {token}"),
+        )
+        for result in cases:
+            with self.subTest(result=type(result).__name__):
+                kwargs = {"side_effect": result} if isinstance(result, Exception) else {"return_value": result}
+                with patch.object(cloner.subprocess, "run", **kwargs):
+                    with self.assertRaises(cloner.GitCloneError) as caught:
+                        asyncio.run(cloner.clone_repository(url, "private-scan", token))
+                self.assertNotIn(token, str(caught.exception))
+                self.assertNotIn(token, "".join(__import__("traceback").format_exception(caught.exception)))
+
     def test_cleanup_removes_only_scan_directory(self):
         root = Path(self.temp.name)
         (root / "scan-1").mkdir()
