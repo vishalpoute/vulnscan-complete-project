@@ -28,7 +28,7 @@ async def run_trufflehog(repo_path: str) -> List[Vulnerability]:
         )
         
         if result.returncode not in (0, 1):
-            print(f"⚠ TruffleHog warning: {result.stderr}")
+            print(f"TruffleHog failed (exit code {result.returncode})")
             return []
         
         # Parse JSON lines output (one JSON object per line)
@@ -39,7 +39,7 @@ async def run_trufflehog(repo_path: str) -> List[Vulnerability]:
                     
                 data = json.loads(line)
         except json.JSONDecodeError:
-            print("⚠ TruffleHog: Failed to parse JSON output")
+            print("TruffleHog: Failed to parse JSON output")
             return []
         
         # Extract results from raw JSON objects
@@ -54,9 +54,8 @@ async def run_trufflehog(repo_path: str) -> List[Vulnerability]:
                 detector_name = result_item.get("detector_name", "secret")
                 detector_type = result_item.get("type", "unknown")
                 
-                # Redact secret: show first 4 chars + ***
-                raw_secret = result_item.get("raw", "")
-                redacted = raw_secret[:4] + "***" if len(raw_secret) > 4 else "***"
+                # Reports must not persist any raw credential characters.
+                redacted = "[REDACTED]"
                 
                 vuln = Vulnerability(
                     id=f"trufflehog_{idx}_{detector_name}",
@@ -66,24 +65,24 @@ async def run_trufflehog(repo_path: str) -> List[Vulnerability]:
                     description=f"Potential {detector_name} detected: {redacted}",
                     file_path=result_item.get("path", ""),
                     line_number=result_item.get("line_number", None),
-                    code_snippet=result_item.get("raw", "")[:50] + "..." if result_item.get("raw") else None,
+                    code_snippet=redacted if result_item.get("raw") else None,
                     cve_id=None,
                     tool_source="trufflehog",
                 )
                 vulnerabilities.append(vuln)
             except Exception as e:
-                print(f"⚠ TruffleHog: Failed to parse result: {e}")
+                print("TruffleHog: Failed to parse result")
                 continue
         
-        print(f"✓ TruffleHog found {len(vulnerabilities)} secrets")
+        print(f"TruffleHog found {len(vulnerabilities)} secrets")
         return vulnerabilities
         
     except FileNotFoundError:
-        print("⚠ TruffleHog not installed. Install with: pip install truffleHog")
+        print("TruffleHog not installed. Install with: pip install truffleHog")
         return []
     except subprocess.TimeoutExpired:
-        print("⚠ TruffleHog scan timed out (5 minutes)")
+        print("TruffleHog scan timed out (5 minutes)")
         return []
     except Exception as e:
-        print(f"⚠ TruffleHog error: {e}")
+        print("TruffleHog scan failed")
         return []
