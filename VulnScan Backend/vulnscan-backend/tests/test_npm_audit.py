@@ -49,7 +49,7 @@ class NpmAuditTests(unittest.TestCase):
         for output in ({"dependencies": dependencies, "fixes": []}, dependencies):
             with self.subTest(output_type=type(output).__name__):
                 result = types.SimpleNamespace(returncode=1, stdout=json.dumps(output))
-                with patch.object(audit.subprocess, "run", return_value=result):
+                with patch.object(audit.Path, "is_file", return_value=True), patch.object(audit.subprocess, "run", return_value=result):
                     findings = asyncio.run(audit._run_pip_audit(Path("fixture")))
                 self.assertEqual(len(findings), 2)
                 self.assertEqual([f.cve_id for f in findings], ["PYSEC-example-1", "PYSEC-example-2"])
@@ -58,8 +58,31 @@ class NpmAuditTests(unittest.TestCase):
 
     def test_pip_audit_empty_dependencies_are_clean(self):
         result = types.SimpleNamespace(returncode=0, stdout='{"dependencies": [], "fixes": []}')
-        with patch.object(audit.subprocess, "run", return_value=result):
+        with patch.object(audit.Path, "is_file", return_value=True), patch.object(audit.subprocess, "run", return_value=result):
             self.assertEqual(asyncio.run(audit._run_pip_audit(Path("fixture"))), [])
+
+    def test_python_auditors_explicitly_target_repository_requirements(self):
+        for runner, output in ((audit._run_pip_audit, {"dependencies": []}), (audit._run_safety_audit, {"vulnerabilities": []})):
+            result = types.SimpleNamespace(returncode=0, stdout=json.dumps(output))
+            with self.subTest(runner=runner.__name__), patch.object(audit.Path, "is_file", return_value=True), patch.object(audit.subprocess, "run", return_value=result) as run:
+                asyncio.run(runner(Path("fixture")))
+                command = run.call_args.args[0]
+                self.assertEqual(command[command.index("-r") + 1], "requirements.txt")
+                self.assertEqual(run.call_args.kwargs["cwd"], str(Path("fixture")))
+
+    def test_missing_requirements_never_audits_the_host(self):
+        with patch.object(audit.Path, "is_file", return_value=False), patch.object(audit.subprocess, "run") as run:
+            self.assertEqual(asyncio.run(audit._run_pip_audit(Path("fixture"))), [])
+            self.assertEqual(asyncio.run(audit._run_safety_audit(Path("fixture"))), [])
+            run.assert_not_called()
+
+    def test_missing_pip_audit_fallback_keeps_repository_target(self):
+        result = types.SimpleNamespace(returncode=0, stdout='{"vulnerabilities": []}')
+        with patch.object(audit.Path, "is_file", return_value=True), patch.object(audit.subprocess, "run", side_effect=[FileNotFoundError(), result]) as run:
+            asyncio.run(audit._run_pip_audit(Path("fixture")))
+            command = run.call_args.args[0]
+            self.assertEqual(command[0], "safety")
+            self.assertEqual(command[command.index("-r") + 1], "requirements.txt")
 
     def test_empty_audit_returns_no_findings(self):
         result = types.SimpleNamespace(returncode=0, stdout='{"vulnerabilities": {}}')

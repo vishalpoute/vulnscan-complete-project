@@ -108,14 +108,17 @@ async def _run_npm_audit(repo_path: Path) -> List[Vulnerability]:
 
 
 async def _run_pip_audit(repo_path: Path) -> List[Vulnerability]:
-    """Run pip audit on Python project."""
+    """Run pip audit against the repository's requirements, never the host environment."""
+    if not (repo_path / "requirements.txt").is_file():
+        print("Python audit skipped: repository requirements.txt is required")
+        return []
     vulnerabilities = []
     
     try:
         # Run pip audit with JSON output (using safety for compatibility)
         # First try pip-audit (newer tool)
         result = subprocess.run(
-            ["pip-audit", "--desc", "--format", "json"],
+            ["pip-audit", "--desc", "--format", "json", "-r", "requirements.txt"],
             cwd=str(repo_path),
             capture_output=True,
             text=True,
@@ -176,12 +179,15 @@ async def _run_pip_audit(repo_path: Path) -> List[Vulnerability]:
 
 
 async def _run_safety_audit(repo_path: Path) -> List[Vulnerability]:
-    """Run safety audit as fallback for Python projects."""
+    """Run safety audit against repository requirements as a fallback."""
+    if not (repo_path / "requirements.txt").is_file():
+        print("Safety audit skipped: repository requirements.txt is required")
+        return []
     vulnerabilities = []
     
     try:
         result = subprocess.run(
-            ["safety", "check", "--json"],
+            ["safety", "check", "--json", "-r", "requirements.txt"],
             cwd=str(repo_path),
             capture_output=True,
             text=True,
@@ -189,7 +195,7 @@ async def _run_safety_audit(repo_path: Path) -> List[Vulnerability]:
         )
         
         if result.returncode not in (0, 1):
-            print("⚠ safety check warning")
+            print("safety check warning")
             return []
         
         try:
@@ -198,7 +204,7 @@ async def _run_safety_audit(repo_path: Path) -> List[Vulnerability]:
             if isinstance(data, list):
                 data = {"vulnerabilities": data}
         except json.JSONDecodeError:
-            print("⚠ safety: Failed to parse JSON output")
+            print("safety: Failed to parse JSON output")
             return []
         
         for vuln_item in data.get("vulnerabilities", []):
@@ -216,18 +222,18 @@ async def _run_safety_audit(repo_path: Path) -> List[Vulnerability]:
                 )
                 vulnerabilities.append(vuln)
             except Exception as e:
-                print(f"⚠ safety: Failed to parse vulnerability: {e}")
+                print(f"safety: Failed to parse vulnerability: {e}")
                 continue
         
-        print(f"✓ safety found {len(vulnerabilities)} vulnerabilities")
+        print(f"safety found {len(vulnerabilities)} vulnerabilities")
         return vulnerabilities
         
     except FileNotFoundError:
-        print("⚠ Neither pip-audit nor safety installed. Install with: pip install pip-audit")
+        print("Neither pip-audit nor safety installed. Install with: pip install pip-audit")
         return []
     except subprocess.TimeoutExpired:
-        print("⚠ safety check timed out (2 minutes)")
+        print("safety check timed out (2 minutes)")
         return []
     except Exception as e:
-        print(f"⚠ safety error: {e}")
+        print(f"safety error: {e}")
         return []
