@@ -38,6 +38,29 @@ class NpmAuditTests(unittest.TestCase):
         self.assertIsNone(findings[2].cve_id)
         self.assertEqual(findings[3].severity, "low")
 
+    def test_pip_audit_nested_and_list_formats_keep_every_advisory(self):
+        dependencies = [
+            {"name": "example", "vulns": [
+                {"id": "PYSEC-example-1", "fix_versions": ["2.0"], "description": "First issue"},
+                {"id": "PYSEC-example-2", "fix_versions": [], "description": "Second issue"},
+            ]},
+            {"name": "clean", "vulns": []},
+        ]
+        for output in ({"dependencies": dependencies, "fixes": []}, dependencies):
+            with self.subTest(output_type=type(output).__name__):
+                result = types.SimpleNamespace(returncode=1, stdout=json.dumps(output))
+                with patch.object(audit.subprocess, "run", return_value=result):
+                    findings = asyncio.run(audit._run_pip_audit(Path("fixture")))
+                self.assertEqual(len(findings), 2)
+                self.assertEqual([f.cve_id for f in findings], ["PYSEC-example-1", "PYSEC-example-2"])
+                self.assertTrue(all(f.title == "Vulnerable pip package: example" for f in findings))
+                self.assertEqual(findings[1].description, "Second issue")
+
+    def test_pip_audit_empty_dependencies_are_clean(self):
+        result = types.SimpleNamespace(returncode=0, stdout='{"dependencies": [], "fixes": []}')
+        with patch.object(audit.subprocess, "run", return_value=result):
+            self.assertEqual(asyncio.run(audit._run_pip_audit(Path("fixture"))), [])
+
     def test_empty_audit_returns_no_findings(self):
         result = types.SimpleNamespace(returncode=0, stdout='{"vulnerabilities": {}}')
         with patch.object(audit.subprocess, "run", return_value=result):
