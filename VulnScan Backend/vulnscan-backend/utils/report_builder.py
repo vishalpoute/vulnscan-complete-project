@@ -33,7 +33,7 @@ def build_vulnerability_summary(vulnerabilities: List[Vulnerability]) -> Vulnera
 def deduplicat_vulnerabilities(vulnerabilities: List[Vulnerability]) -> List[Vulnerability]:
     """
     Remove duplicate vulnerabilities from multiple tools.
-    Aggregates findings with same type/file/location.
+    Aggregates findings with the same type/file/location/advisory.
     
     Args:
         vulnerabilities: List of findings from all tools
@@ -41,15 +41,16 @@ def deduplicat_vulnerabilities(vulnerabilities: List[Vulnerability]) -> List[Vul
     Returns:
         Deduplicated list of unique findings, sorted by severity
     """
-    # Create a map to track unique vulnerabilities by (type, file_path, line_number)
+    # Keep distinct advisories at the same dependency location.
     unique_map = {}
     
     for vuln in vulnerabilities:
-        # Use (type, file_path, line_number) as dedup key
+        # Advisory IDs distinguish multiple flaws affecting the same package.
         key = (
             vuln.type,
             vuln.file_path or "unknown",
             vuln.line_number or -1,
+            vuln.cve_id or "",
         )
         
         # Keep the one with highest severity if duplicates exist
