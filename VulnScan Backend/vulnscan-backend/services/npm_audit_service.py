@@ -129,11 +129,19 @@ async def _run_pip_audit(repo_path: Path) -> List[Vulnerability]:
         try:
             data = json.loads(result.stdout)
         except json.JSONDecodeError:
-            print("⚠ pip-audit: Failed to parse JSON output")
+            print("pip-audit: Failed to parse JSON output")
             return []
         
-        # Extract vulnerabilities from pip-audit output
-        for vuln_item in data.get("vulnerabilities", []):
+        # pip-audit nests advisories under each dependency's `vulns` array.
+        # Older versions emitted the dependency list directly.
+        dependencies = data if isinstance(data, list) else data.get("dependencies", [])
+        entries = []
+        for dependency in dependencies:
+            for advisory in dependency.get("vulns", []):
+                entries.append({**advisory, "name": dependency.get("name", "unknown")})
+        if isinstance(data, dict):
+            entries.extend(data.get("vulnerabilities", []))
+        for vuln_item in entries:
             try:
                 severity_str = vuln_item.get("fix_versions", [])
                 severity = SeverityLevel.HIGH if severity_str else SeverityLevel.CRITICAL
@@ -151,19 +159,19 @@ async def _run_pip_audit(repo_path: Path) -> List[Vulnerability]:
                 )
                 vulnerabilities.append(vuln)
             except Exception as e:
-                print(f"⚠ pip-audit: Failed to parse vulnerability: {e}")
+                print(f"pip-audit: Failed to parse vulnerability: {e}")
                 continue
         
-        print(f"✓ pip-audit found {len(vulnerabilities)} vulnerabilities")
+        print(f"pip-audit found {len(vulnerabilities)} vulnerabilities")
         return vulnerabilities
         
     except FileNotFoundError:
         return await _run_safety_audit(repo_path)
     except subprocess.TimeoutExpired:
-        print("⚠ pip-audit timed out (2 minutes)")
+        print("pip-audit timed out (2 minutes)")
         return []
     except Exception as e:
-        print(f"⚠ pip-audit error: {e}")
+        print(f"pip-audit error: {e}")
         return []
 
 
