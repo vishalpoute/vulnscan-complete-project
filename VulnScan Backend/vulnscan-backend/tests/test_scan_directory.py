@@ -62,6 +62,24 @@ class ScanDirectoryTests(unittest.TestCase):
                 asyncio.run(cloner.clone_repository(url, "valid-scan"))
                 self.assertIn(url, run.call_args.args[0])
 
+    def test_private_token_is_runtime_only_and_preserves_existing_config(self):
+        token = "synthetic-private-token"
+        url = "https://github.com/example/private"
+        inherited = {"GIT_CONFIG_COUNT": "1", "GIT_CONFIG_KEY_0": "http.version", "GIT_CONFIG_VALUE_0": "HTTP/1.1"}
+        with patch.dict(cloner.os.environ, inherited, clear=True), patch.object(cloner.subprocess, "run", return_value=types.SimpleNamespace(returncode=0)) as run:
+            asyncio.run(cloner.clone_repository(url, "private-scan", token))
+            command = run.call_args.args[0]
+            env = run.call_args.kwargs["env"]
+            self.assertIn(url, command)
+            self.assertNotIn(token, " ".join(command))
+            self.assertEqual(env["GIT_CONFIG_COUNT"], "3")
+            self.assertEqual(env["GIT_CONFIG_KEY_0"], "http.version")
+            self.assertEqual(env["GIT_CONFIG_VALUE_1"], "")
+            self.assertEqual(env["GIT_CONFIG_KEY_2"], "http.https://github.com/.extraheader")
+            encoded = env["GIT_CONFIG_VALUE_2"].split()[-1]
+            self.assertEqual(cloner.base64.b64decode(encoded).decode(), f"x-access-token:{token}")
+            self.assertNotIn("GIT_CONFIG_KEY_2", cloner.os.environ)
+
     def test_clone_failures_do_not_expose_credentials(self):
         token = "synthetic-private-token"
         url = "https://github.com/example/private"

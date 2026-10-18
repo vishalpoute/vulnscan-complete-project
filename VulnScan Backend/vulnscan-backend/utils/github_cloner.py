@@ -1,6 +1,8 @@
 """GitHub repository cloning utility."""
 
 import subprocess
+import base64
+import os
 import shutil
 import re
 from pathlib import Path
@@ -61,22 +63,25 @@ async def clone_repository(
         
         clone_path.mkdir(parents=True, exist_ok=True)
         
-        # Prepare clone URL with token if provided (for private repos)
+        # Runtime-only authentication keeps tokens out of argv and origin URLs.
+        clone_env = os.environ.copy()
         if github_token:
-            # Insert token into URL: https://token@github.com/owner/repo
-            if repo_url.startswith("https://"):
-                clone_url = repo_url.replace("https://", f"https://{github_token}@")
-            else:
-                raise GitCloneError("Only HTTPS URLs supported")
-        else:
-            clone_url = repo_url
-        
+            count = int(clone_env.get("GIT_CONFIG_COUNT") or "0")
+            key = "http.https://github.com/.extraheader"
+            credential = base64.b64encode(f"x-access-token:{github_token}".encode()).decode()
+            clone_env[f"GIT_CONFIG_KEY_{count}"] = key
+            clone_env[f"GIT_CONFIG_VALUE_{count}"] = ""
+            clone_env[f"GIT_CONFIG_KEY_{count + 1}"] = key
+            clone_env[f"GIT_CONFIG_VALUE_{count + 1}"] = f"Authorization: Basic {credential}"
+            clone_env["GIT_CONFIG_COUNT"] = str(count + 2)
+
         # Run git clone with timeout
         result = subprocess.run(
-            ["git", "clone", "--depth", "1", clone_url, str(clone_path)],
+            ["git", "clone", "--depth", "1", repo_url, str(clone_path)],
             capture_output=True,
             text=True,
             timeout=60,
+            env=clone_env,
         )
         
         if result.returncode != 0:
