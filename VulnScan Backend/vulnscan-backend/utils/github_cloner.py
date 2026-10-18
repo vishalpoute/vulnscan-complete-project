@@ -1,6 +1,7 @@
 """GitHub repository cloning utility."""
 
 import subprocess
+import asyncio
 import base64
 import os
 import shutil
@@ -76,7 +77,8 @@ async def clone_repository(
             clone_env["GIT_CONFIG_COUNT"] = str(count + 2)
 
         # Run git clone with timeout
-        result = subprocess.run(
+        result = await asyncio.to_thread(
+            subprocess.run,
             ["git", "clone", "--depth", "1", repo_url, str(clone_path)],
             capture_output=True,
             text=True,
