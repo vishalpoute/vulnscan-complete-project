@@ -47,7 +47,7 @@ async def _run_npm_audit(repo_path: Path) -> List[Vulnerability]:
         )
         
         if result.returncode not in (0, 1):
-            print(f"npm audit warning: {result.stderr}")
+            print("npm audit failed; scanner diagnostics suppressed to protect credentials")
             return []
         
         try:
@@ -89,8 +89,8 @@ async def _run_npm_audit(repo_path: Path) -> List[Vulnerability]:
                     tool_source="npm_audit",
                 )
                 vulnerabilities.append(vuln)
-            except Exception as e:
-                print(f"npm audit: Failed to parse vulnerability: {e}")
+            except Exception:
+                print("npm audit: Failed to parse vulnerability")
                 continue
         
         print(f"npm audit found {len(vulnerabilities)} vulnerabilities")
@@ -102,8 +102,8 @@ async def _run_npm_audit(repo_path: Path) -> List[Vulnerability]:
     except subprocess.TimeoutExpired:
         print("npm audit timed out (2 minutes)")
         return []
-    except Exception as e:
-        print(f"npm audit error: {e}")
+    except Exception:
+        print("npm audit failed; exception details suppressed to protect credentials")
         return []
 
 
@@ -161,8 +161,8 @@ async def _run_pip_audit(repo_path: Path) -> List[Vulnerability]:
                     tool_source="pip_audit",
                 )
                 vulnerabilities.append(vuln)
-            except Exception as e:
-                print(f"pip-audit: Failed to parse vulnerability: {e}")
+            except Exception:
+                print("pip-audit: Failed to parse vulnerability")
                 continue
         
         print(f"pip-audit found {len(vulnerabilities)} vulnerabilities")
@@ -173,8 +173,8 @@ async def _run_pip_audit(repo_path: Path) -> List[Vulnerability]:
     except subprocess.TimeoutExpired:
         print("pip-audit timed out (2 minutes)")
         return []
-    except Exception as e:
-        print(f"pip-audit error: {e}")
+    except Exception:
+        print("pip-audit failed; exception details suppressed to protect credentials")
         return []
 
 
@@ -221,8 +221,8 @@ async def _run_safety_audit(repo_path: Path) -> List[Vulnerability]:
                     tool_source="safety",
                 )
                 vulnerabilities.append(vuln)
-            except Exception as e:
-                print(f"safety: Failed to parse vulnerability: {e}")
+            except Exception:
+                print("safety: Failed to parse vulnerability")
                 continue
         
         print(f"safety found {len(vulnerabilities)} vulnerabilities")
@@ -234,6 +234,6 @@ async def _run_safety_audit(repo_path: Path) -> List[Vulnerability]:
     except subprocess.TimeoutExpired:
         print("safety check timed out (2 minutes)")
         return []
-    except Exception as e:
-        print(f"safety error: {e}")
+    except Exception:
+        print("safety failed; exception details suppressed to protect credentials")
         return []
