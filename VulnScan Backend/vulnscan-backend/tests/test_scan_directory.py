@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import importlib.util
 from pathlib import Path
 import sys
@@ -61,6 +62,28 @@ class ScanDirectoryTests(unittest.TestCase):
             with self.subTest(url=url), patch.object(cloner.subprocess, "run", return_value=types.SimpleNamespace(returncode=0)) as run:
                 asyncio.run(cloner.clone_repository(url, "valid-scan"))
                 self.assertIn(url, run.call_args.args[0])
+
+    def test_pending_clone_does_not_block_other_async_work(self):
+        started = threading.Event()
+        release = threading.Event()
+
+        def slow_clone(*args, **kwargs):
+            started.set()
+            release.wait(timeout=2)
+            return types.SimpleNamespace(returncode=0)
+
+        async def scenario():
+            task = asyncio.create_task(cloner.clone_repository("https://github.com/example/repo", "async-scan"))
+            try:
+                self.assertTrue(await asyncio.to_thread(started.wait, 1))
+                # This coroutine can progress while the subprocess is still waiting.
+                self.assertFalse(task.done())
+            finally:
+                release.set()
+                await task
+
+        with patch.object(cloner.subprocess, "run", side_effect=slow_clone):
+            asyncio.run(scenario())
 
     def test_private_token_is_runtime_only_and_preserves_existing_config(self):
         token = "synthetic-private-token"
