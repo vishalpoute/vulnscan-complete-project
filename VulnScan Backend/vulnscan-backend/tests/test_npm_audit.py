@@ -41,6 +41,25 @@ class NpmAuditTests(unittest.TestCase):
         self.assertIsNone(findings[2].cve_id)
         self.assertEqual(findings[3].severity, "low")
 
+    def test_every_npm_advisory_keeps_its_identity_and_severity(self):
+        advisories = [
+            {"source": 101, "title": "First", "severity": "low"},
+            {"source": 102, "title": "Second", "severity": "high"},
+            {"url": "https://example.invalid/advisory/third", "title": "Third", "severity": "moderate"},
+            {"title": "Fourth", "range": "<2"},
+        ]
+        def scan(items):
+            output = {"vulnerabilities": {"example": {"severity": "critical", "via": ["transitive", *items]}}}
+            result = types.SimpleNamespace(returncode=1, stdout=json.dumps(output))
+            with patch.object(audit.subprocess, "run", return_value=result):
+                return asyncio.run(audit._run_npm_audit(Path("fixture")))
+        findings = scan(advisories)
+        self.assertEqual([v.description for v in findings], ["First", "Second", "Third", "Fourth"])
+        self.assertEqual([v.severity for v in findings], ["low", "high", "medium", "critical"])
+        self.assertEqual(len({v.id for v in findings}), 4)
+        self.assertTrue(all(v.cve_id is None for v in findings))
+        self.assertEqual({v.description: v.id for v in findings}, {v.description: v.id for v in scan(list(reversed(advisories)))})
+
     def test_pip_audit_nested_and_list_formats_keep_every_advisory(self):
         dependencies = [
             {"name": "example", "vulns": [

@@ -17,7 +17,7 @@ with patch.dict(sys.modules, {"models.vulnerability": models}):
 
 
 def finding(advisory, severity="high"):
-    return types.SimpleNamespace(type="Vulnerable example", file_path="requirements.txt", line_number=None, cve_id=advisory, severity=severity, has_ai_content=False)
+    return types.SimpleNamespace(type="Vulnerable example", file_path="requirements.txt", line_number=None, cve_id=advisory, severity=severity, has_ai_content=False, tool_source="pip_audit", id="example")
 
 
 class ReportDeduplicationTests(unittest.TestCase):
@@ -31,6 +31,17 @@ class ReportDeduplicationTests(unittest.TestCase):
         findings = report.deduplicat_vulnerabilities([finding("CVE-example", "low"), finding("CVE-example", "critical")])
         self.assertEqual(len(findings), 1)
         self.assertEqual(findings[0].severity, "critical")
+
+    def test_npm_source_ids_preserve_advisories_without_cves(self):
+        first = finding(None, "low")
+        second = finding(None, "high")
+        duplicate = finding(None, "critical")
+        for item, source in ((first, "npm_example_101"), (second, "npm_example_102"), (duplicate, "npm_example_101")):
+            item.tool_source = "npm_audit"
+            item.id = source
+        findings = report.deduplicat_vulnerabilities([first, second, duplicate])
+        self.assertEqual(len(findings), 2)
+        self.assertEqual({v.id: v.severity for v in findings}, {"npm_example_101": "critical", "npm_example_102": "high"})
 
     def test_findings_without_advisory_keep_existing_dedup_behavior(self):
         findings = report.deduplicat_vulnerabilities([finding(None, "low"), finding(None, "high")])

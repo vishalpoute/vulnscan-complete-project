@@ -3,6 +3,7 @@
 import asyncio
 import subprocess
 import json
+import hashlib
 from typing import List
 from pathlib import Path
 from models.vulnerability import Vulnerability, SeverityLevel
@@ -61,40 +62,47 @@ async def _run_npm_audit(repo_path: Path) -> List[Vulnerability]:
         # Extract vulnerabilities from npm audit output
         vulnerabilities_dict = data.get("vulnerabilities", {})
         
+        severity_map = {
+            "critical": SeverityLevel.CRITICAL,
+            "high": SeverityLevel.HIGH,
+            "moderate": SeverityLevel.MEDIUM,
+            "low": SeverityLevel.LOW,
+        }
         for pkg_name, vuln_data in vulnerabilities_dict.items():
-            try:
-                severity_str = vuln_data.get("severity", "moderate").lower()
-                severity_map = {
-                    "critical": SeverityLevel.CRITICAL,
-                    "high": SeverityLevel.HIGH,
-                    "moderate": SeverityLevel.MEDIUM,
-                    "low": SeverityLevel.LOW,
-                }
-                severity = severity_map.get(severity_str, SeverityLevel.MEDIUM)
-                
-                # npm uses package-name strings for transitive findings and
-                # advisory objects for direct findings, sometimes in one list.
-                advisory = next(
-                    (item for item in vuln_data.get("via", []) if isinstance(item, dict)),
-                    {},
-                )
-                cve_id = next(iter(advisory.get("cves") or []), None)
-                vuln = Vulnerability(
-                    id=f"npm_{pkg_name}_{cve_id or 'unknown'}",
-                    type=f"Vulnerable {pkg_name}",
-                    severity=severity,
-                    title=f"Vulnerable npm package: {pkg_name}",
-                    description=advisory.get("title", "Vulnerability in dependency"),
-                    file_path="package.json",
-                    line_number=None,
-                    cve_id=cve_id,
-                    tool_source="npm_audit",
-                )
-                vulnerabilities.append(vuln)
-            except Exception:
-                print("npm audit: Failed to parse vulnerability")
+            if not isinstance(vuln_data, dict):
+                print("npm audit: Skipping malformed package entry")
                 continue
-        
+            # String entries refer to transitive packages; objects are distinct
+            # advisories. Keep a package-level finding when there are no objects.
+            advisories = [item for item in (vuln_data.get("via") or []) if isinstance(item, dict)] or [{}]
+            for advisory in advisories:
+                try:
+                    severity_str = advisory.get("severity", vuln_data.get("severity", "moderate")).lower()
+                    severity = severity_map.get(severity_str, SeverityLevel.MEDIUM)
+                    cve_id = next(iter(advisory.get("cves") or []), None)
+                    source_id = advisory.get("source") or advisory.get("url") or cve_id
+                    if not source_id:
+                        identity = json.dumps({
+                            "title": advisory.get("title"),
+                            "range": advisory.get("range"),
+                        }, sort_keys=True)
+                        source_id = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:16]
+                    vuln = Vulnerability(
+                        id=f"npm_{pkg_name}_{source_id}",
+                        type=f"Vulnerable {pkg_name}",
+                        severity=severity,
+                        title=f"Vulnerable npm package: {pkg_name}",
+                        description=advisory.get("title", "Vulnerability in dependency"),
+                        file_path="package.json",
+                        line_number=None,
+                        cve_id=cve_id,
+                        tool_source="npm_audit",
+                    )
+                    vulnerabilities.append(vuln)
+                except Exception:
+                    print("npm audit: Failed to parse vulnerability")
+                    continue
+
         print(f"npm audit found {len(vulnerabilities)} vulnerabilities")
         return vulnerabilities
         
