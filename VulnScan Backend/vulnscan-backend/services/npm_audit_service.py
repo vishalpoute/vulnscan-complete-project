@@ -1,5 +1,6 @@
 """npm/pip dependency audit wrapper."""
 
+import asyncio
 import subprocess
 import json
 from typing import List
@@ -38,7 +39,8 @@ async def _run_npm_audit(repo_path: Path) -> List[Vulnerability]:
     
     try:
         # Run npm audit with JSON output
-        result = subprocess.run(
+        result = await asyncio.to_thread(
+            subprocess.run,
             ["npm", "audit", "--json"],
             cwd=str(repo_path),
             capture_output=True,
@@ -117,7 +119,8 @@ async def _run_pip_audit(repo_path: Path) -> List[Vulnerability]:
     try:
         # Run pip audit with JSON output (using safety for compatibility)
         # First try pip-audit (newer tool)
-        result = subprocess.run(
+        result = await asyncio.to_thread(
+            subprocess.run,
             ["pip-audit", "--desc", "--format", "json", "-r", "requirements.txt"],
             cwd=str(repo_path),
             capture_output=True,
@@ -186,7 +189,8 @@ async def _run_safety_audit(repo_path: Path) -> List[Vulnerability]:
     vulnerabilities = []
     
     try:
-        result = subprocess.run(
+        result = await asyncio.to_thread(
+            subprocess.run,
             ["safety", "check", "--json", "-r", "requirements.txt"],
             cwd=str(repo_path),
             capture_output=True,

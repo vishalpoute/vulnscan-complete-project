@@ -5,6 +5,7 @@ import importlib.util
 import json
 from pathlib import Path
 import sys
+import threading
 import types
 import unittest
 from unittest.mock import patch
@@ -111,6 +112,34 @@ class NpmAuditTests(unittest.TestCase):
                 self.assertEqual(asyncio.run(runner(Path("fixture"))), [])
                 self.assertNotIn(secret, console.getvalue())
                 self.assertIn("Failed to parse vulnerability", console.getvalue())
+
+    def test_dependency_audits_leave_the_event_loop_responsive(self):
+        for runner, output in (
+            (audit._run_npm_audit, {"vulnerabilities": {}}),
+            (audit._run_pip_audit, {"dependencies": []}),
+            (audit._run_safety_audit, {"vulnerabilities": []}),
+        ):
+            started = threading.Event()
+            release = threading.Event()
+
+            def slow_audit(*args, **kwargs):
+                started.set()
+                release.wait(timeout=2)
+                return types.SimpleNamespace(returncode=0, stdout=json.dumps(output))
+
+            async def scenario():
+                task = asyncio.create_task(runner(Path("fixture")))
+                try:
+                    self.assertTrue(await asyncio.to_thread(started.wait, 1))
+                    self.assertFalse(task.done())
+                finally:
+                    release.set()
+                    await task
+
+            with self.subTest(runner=runner.__name__), patch.object(audit.Path, "is_file", return_value=True), patch.object(audit.subprocess, "run", side_effect=slow_audit) as run:
+                asyncio.run(scenario())
+                self.assertEqual(run.call_args.kwargs["timeout"], 120)
+                self.assertEqual(run.call_args.kwargs["cwd"], str(Path("fixture")))
 
     def test_empty_audit_returns_no_findings(self):
         result = types.SimpleNamespace(returncode=0, stdout='{"vulnerabilities": {}}')
