@@ -50,7 +50,7 @@ def deduplicat_vulnerabilities(vulnerabilities: List[Vulnerability]) -> List[Vul
             vuln.type,
             vuln.file_path or "unknown",
             vuln.line_number or -1,
-            vuln.cve_id or "",
+            vuln.cve_id or (vuln.id if vuln.tool_source == "npm_audit" else ""),
         )
         
         # Keep the one with highest severity if duplicates exist
