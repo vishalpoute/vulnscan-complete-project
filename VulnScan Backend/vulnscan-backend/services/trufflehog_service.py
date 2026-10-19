@@ -1,5 +1,6 @@
 """TruffleHog secret scanning wrapper."""
 
+import asyncio
 import subprocess
 import json
 from typing import List
@@ -20,7 +21,8 @@ async def run_trufflehog(repo_path: str) -> List[Vulnerability]:
     
     try:
         # Run trufflehog on filesystem with JSON output
-        result = subprocess.run(
+        result = await asyncio.to_thread(
+            subprocess.run,
             ["trufflehog", "filesystem", repo_path, "--json"],
             capture_output=True,
             text=True,

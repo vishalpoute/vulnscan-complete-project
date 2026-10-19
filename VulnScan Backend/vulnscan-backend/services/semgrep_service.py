@@ -1,5 +1,6 @@
 """Semgrep security scanning wrapper."""
 
+import asyncio
 import subprocess
 import json
 from typing import List
@@ -21,7 +22,8 @@ async def run_semgrep(repo_path: str) -> List[Vulnerability]:
     
     try:
         # Run semgrep with auto config and JSON output
-        result = subprocess.run(
+        result = await asyncio.to_thread(
+            subprocess.run,
             ["semgrep", "--config=auto", repo_path, "--json"],
             capture_output=True,
             text=True,
