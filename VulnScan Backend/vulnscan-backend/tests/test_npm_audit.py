@@ -1,4 +1,6 @@
 import asyncio
+import contextlib
+import io
 import importlib.util
 import json
 from pathlib import Path
@@ -83,6 +85,32 @@ class NpmAuditTests(unittest.TestCase):
             command = run.call_args.args[0]
             self.assertEqual(command[0], "safety")
             self.assertEqual(command[command.index("-r") + 1], "requirements.txt")
+
+    def test_audit_failures_do_not_log_credentials(self):
+        secret = "synthetic-registry-password"
+        for runner in (audit._run_npm_audit, audit._run_pip_audit, audit._run_safety_audit):
+            for outcome in (
+                {"return_value": types.SimpleNamespace(returncode=2, stderr=secret)},
+                {"side_effect": RuntimeError(secret)},
+            ):
+                with self.subTest(runner=runner.__name__, outcome=outcome), patch.object(audit.Path, "is_file", return_value=True), patch.object(audit.subprocess, "run", **outcome), contextlib.redirect_stdout(io.StringIO()) as console:
+                    self.assertEqual(asyncio.run(runner(Path("fixture"))), [])
+                    self.assertNotIn(secret, console.getvalue())
+                    self.assertTrue(console.getvalue().strip())
+
+    def test_model_validation_errors_do_not_log_scanner_data(self):
+        secret = "synthetic-registry-password"
+        cases = (
+            (audit._run_npm_audit, {"vulnerabilities": {"example": {"via": []}}}),
+            (audit._run_pip_audit, {"dependencies": [{"name": "example", "vulns": [{"id": "example"}]}]}),
+            (audit._run_safety_audit, {"vulnerabilities": [{"package": "example"}]}),
+        )
+        for runner, output in cases:
+            result = types.SimpleNamespace(returncode=1, stdout=json.dumps(output))
+            with self.subTest(runner=runner.__name__), patch.object(audit.Path, "is_file", return_value=True), patch.object(audit.subprocess, "run", return_value=result), patch.object(audit, "Vulnerability", side_effect=ValueError(secret)), contextlib.redirect_stdout(io.StringIO()) as console:
+                self.assertEqual(asyncio.run(runner(Path("fixture"))), [])
+                self.assertNotIn(secret, console.getvalue())
+                self.assertIn("Failed to parse vulnerability", console.getvalue())
 
     def test_empty_audit_returns_no_findings(self):
         result = types.SimpleNamespace(returncode=0, stdout='{"vulnerabilities": {}}')
