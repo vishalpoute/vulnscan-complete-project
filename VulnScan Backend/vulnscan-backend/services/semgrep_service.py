@@ -31,7 +31,7 @@ async def run_semgrep(repo_path: str) -> List[Vulnerability]:
         )
         
         if result.returncode not in (0, 1):  # 0 = no issues, 1 = issues found
-            print(f"Semgrep warning: {result.stderr}")
+            print("Semgrep failed; scanner diagnostics suppressed to protect source data")
             return []
         
         # Parse JSON output
@@ -71,8 +71,8 @@ async def run_semgrep(repo_path: str) -> List[Vulnerability]:
                     tool_source="semgrep",
                 )
                 vulnerabilities.append(vuln)
-            except Exception as e:
-                print(f"Semgrep: Failed to parse result: {e}")
+            except Exception:
+                print("Semgrep: Failed to parse result")
                 continue
         
         print(f"Semgrep found {len(vulnerabilities)} issues")
@@ -84,6 +84,6 @@ async def run_semgrep(repo_path: str) -> List[Vulnerability]:
     except subprocess.TimeoutExpired:
         print("Semgrep scan timed out (5 minutes)")
         return []
-    except Exception as e:
-        print(f"Semgrep error: {e}")
+    except Exception:
+        print("Semgrep failed; exception details suppressed to protect source data")
         return []
